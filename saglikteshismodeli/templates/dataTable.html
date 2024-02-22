@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Patient Data Table{% endblock %}
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+<script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<style type="text/css">
+    .btn-info{
+        background-color: #96EFFF;
+    }
+</style>
+<script>
+$(document).ready(function() {
+    $('#patientTable').DataTable();
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Patient Data Table</h2>
+    <table id="patientTable" class="table table-bordered">
+        <thead class="thead-dark">
+            <tr>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Weight</th>
+                <th>Height</th>
+                <th>BMI</th>
+                <th>Sigara</th>
+                <th>Alkol</th>
+                <th>Drug</th>
+                <th>Family History</th>
+                <th>Blood Pressure</th>
+                <th>Symptom</th>
+                <th>Blood Values</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for patient in patients %}
+            <tr>
+                <td>{{ patient.name }}</td>
+                <td>{{ patient.age }}</td>
+                <td>{{ patient.weight }}</td>
+                <td>{{ patient.height }}</td>
+                <td>{{ patient.bmi }}</td>
+                <td>{{ patient.sigara }}</td>
+                <td>{{ patient.alkol }}</td>
+                <td>{{ patient.drug }}</td>
+                <td>{{ patient.familyHistory }}</td>
+                <td>{{ patient.bloodPressure }}</td>
+                <td>{{ patient.symptom }}</td>
+                <td>
+                    <button type="button" class="btn btn-info" data-toggle="modal" data-target="#bloodValuesModal{{ patient._id }}">ℹ️</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% for patient in patients %}
+<div class="modal fade" id="bloodValuesModal{{ patient._id }}" tabindex="-1" role="dialog" aria-labelledby="bloodValuesModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="bloodValuesModalLabel">Blood Values for {{ patient.name }}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        {% for value in patient.blood_values %}
+
+        <p><strong>Blood Type: </strong> {{  value.bloodType }} </p>
+        <p><strong>RBC: </strong> {{ value.rbc }} </p>
+        <p><strong>Hemoglobin: </strong> {{ value.hemoglobin }} </p>
+        <p><strong>Hematocrit: </strong> {{ value.hematocrit }}</p>
+        <p><strong>MCV: </strong> {{ value.mcv }} </p>
+        <p><strong>MCH: </strong> {{ value.mch }} </p>
+        <p><strong>MCHC: </strong> {{ value.mchc }} </p>
+        <p><strong>RDW: </strong> {{ value.rdw }} </p>
+        <p><strong>WBC: </strong> {{ value.wbc }}</p>
+        <p><strong>Neutrophill: </strong> {{ value.neutrophill }}</p>
+        <p><strong>Lymphocyte: </strong> {{ value.lymphocyte }} </p>
+        <p><strong>Monocyte: </strong> {{ value.monocyte }}</p>
+        <p><strong>Eosinophill: </strong> {{ value.eosinophill }}</p>
+        <p><strong>Basophill: </strong> {{ value.basophill }}</p>
+        <p><strong>Platelet: </strong> {{ value.platelet }}</p>
+        <p><strong>PDW: </strong> {{ value.pdw }}</p>
+        <p><strong>MPV: </strong> {{ value.mpv }}</p>
+        <p><strong>PCT: </strong> {{ value.pct }}</p>
+
+        {% endfor %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}
