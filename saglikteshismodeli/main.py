@@ -6,11 +6,16 @@ from werkzeug.utils import secure_filename  # secure_filename için eklendi
 import pymongo
 from decouple import config
 import pandas as pd  # pandas için eklendi
+from bson.objectid import ObjectId
+
 
 app = Flask('app')
 app.secret_key = config('secret')
 my_client = pymongo.MongoClient(config('mongo_url'))
 my_db = my_client[config('db_name')]
+
+if not os.path.exists('uploads'):
+    os.makedirs('uploads')
 
 
 def get_sequence(seq_name):
@@ -59,6 +64,12 @@ def login():
     return render_template("login.html")
 
 
+@app.route('/dataTable')
+def data_table():
+    patients = list(my_db.patientData.find())
+    return render_template('dataTable.html', patients=patients)
+
+
 @app.route('/')
 @login_required
 def index():
@@ -66,26 +77,34 @@ def index():
 
 
 @app.route('/submit', methods=['POST'])
-@login_required  # Bu decorator'ın tanımı, yalnızca giriş yapan kullanıcılar için submit işlemini sınırlandırır.
+@login_required
 def submit():
     # Form verilerini al
+    name = request.form.get("name")
+    age = int(request.form.get("age"))
+    weight = float(request.form.get("weight", 0))  # Eğer değer yoksa 0 olarak kabul et
+    height = float(request.form.get("height", 0))  # Eğer değer yoksa 0 olarak kabul et
+
+    # BMI hesaplaması
+    bmi = weight / ((height / 100) ** 2) if height > 0 else 0
+
     patient_data = {
-        "name": request.form.get("name"),
-        "age": int(request.form.get("age")),
-        "weight": float(request.form.get("weight")),
-        "height": float(request.form.get("height")),
-        "bmi": float(request.form.get("bmi")),
+        "_id": ObjectId(),
+        "name": name,
+        "age": age,
+        "weight": weight,
+        "height": height,
+        "bmi": round(bmi, 2),  # BMI değerini yuvarla
         "sigara": "sigara" in request.form,
         "alkol": "alkol" in request.form,
         "drug": "drug" in request.form,
         "familyHistory": request.form.get("familyHistory"),
-        "bloodPressure": request.form.get("bloodPressure")
+        "bloodPressure": request.form.get("bloodPressure"),
+        "symptom": request.form.get("symptom"),
+        "blood_values": []
     }
 
-    # Veritabanına patientData ekleyin
-    my_db.patientData.insert_one(patient_data)  # 'db' yerine 'my_db' kullanıldı
-
-    # Excel dosyasını işle
+    # Kan değerlerini Excel dosyasından oku
     if 'bloodValues' in request.files:
         file = request.files['bloodValues']
         if file and file.filename.endswith('.xlsx'):
@@ -93,11 +112,17 @@ def submit():
             filepath = os.path.join('uploads', filename)
             file.save(filepath)
 
-            # Excel dosyasını oku ve veritabanına ekle
+            # Excel dosyasını oku
             df = pd.read_excel(filepath)
             blood_values = df.to_dict(orient='records')  # DataFrame'i dictionary listesine dönüştür
-            my_db.bloodValue.insert_many(blood_values)  # 'db' yerine 'my_db' kullanıldı
-            os.remove(filepath)  # Dosyayı sil
+
+            # Okunan kan değerlerini patient_data içine ekleyin
+            patient_data["blood_values"].extend(blood_values)
+
+            os.remove(filepath)  # Dosyayı işledikten sonra sil
+
+    # Veritabanına patientData ekleyin
+    my_db.patientData.insert_one(patient_data)
 
     return redirect(url_for('index'))
 
