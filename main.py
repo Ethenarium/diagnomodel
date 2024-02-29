@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import functools
 import os
-from flask import Flask, redirect, render_template, request, session, url_for, jsonify, send_file
+from flask import Flask, redirect, render_template, request, session, url_for, jsonify
 from werkzeug.utils import secure_filename  # secure_filename için eklendi
 import pymongo
 from decouple import config
@@ -125,6 +125,32 @@ def submit():
     my_db.patientData.insert_one(patient_data)
 
     return redirect(url_for('index'))
+
+
+@app.route('/api/diagnosis', methods=['GET'])
+@login_required
+def get_all_inventory():
+    try:
+        patients = list(my_db.patientData.find())
+        for patient in patients:
+            patient['_id'] = str(patient['_id'])
+        return jsonify(patients)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/patients/<string:patient_name>', methods=['GET'])
+@login_required
+def get_patient_by_name(patient_name):
+    try:
+        patient = my_db.patientData.find_one({"name": patient_name})
+        if patient:
+            patient['_id'] = str(patient['_id'])
+            return jsonify(patient)
+        else:
+            return jsonify({'error': 'Patient not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 if __name__ == '__main__':

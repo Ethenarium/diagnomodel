@@ -5,24 +5,26 @@
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+<style type="text/css">
 
+</style>
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    function calculateBMI() {
-        var weight = document.getElementById('weight').value; // Kilonun alınması
-        var height = document.getElementById('height').value; // Boyun alınması (cm olarak)
+    document.addEventListener("DOMContentLoaded", function() {
+        function calculateBMI() {
+            var weight = document.getElementById('weight').value; // Kilonun alınması
+            var height = document.getElementById('height').value; // Boyun alınması (cm olarak)
 
-        if(weight > 0 && height > 0) {
-            height = height / 100; // cm'yi metreye çevirme
-            var bmi = weight / (height * height); // BMI hesaplama
-            document.getElementById('bmi').value = bmi.toFixed(2); // BMI değerini yuvarla ve BMI alanına yaz
+            if(weight > 0 && height > 0) {
+                height = height / 100; // cm'yi metreye çevirme
+                var bmi = weight / (height * height); // BMI hesaplama
+                document.getElementById('bmi').value = bmi.toFixed(2); // BMI değerini yuvarla ve BMI alanına yaz
+            }
         }
-    }
 
-    // Kilo ve boy input alanlarını dinle ve herhangi bir değişiklikte calculateBMI fonksiyonunu çağır
-    document.getElementById('weight').addEventListener('input', calculateBMI);
-    document.getElementById('height').addEventListener('input', calculateBMI);
-});
+        // Kilo ve boy input alanlarını dinle ve herhangi bir değişiklikte calculateBMI fonksiyonunu çağır
+        document.getElementById('weight').addEventListener('input', calculateBMI);
+        document.getElementById('height').addEventListener('input', calculateBMI);
+    });
 </script>
 
 {% endblock %}
