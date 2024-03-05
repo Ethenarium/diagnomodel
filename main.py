@@ -2,10 +2,10 @@ from datetime import datetime, timedelta
 import functools
 import os
 from flask import Flask, redirect, render_template, request, session, url_for, jsonify
-from werkzeug.utils import secure_filename  # secure_filename için eklendi
+from werkzeug.utils import secure_filename
 import pymongo
 from decouple import config
-import pandas as pd  # pandas için eklendi
+import pandas as pd
 from bson.objectid import ObjectId
 
 
@@ -66,6 +66,7 @@ def login():
 
 @app.route('/dataTable')
 def data_table():
+    # Veritabanından hasta verilerini çek ve dataTable.html şablonuna gönder
     patients = list(my_db.patientData.find())
     return render_template('dataTable.html', patients=patients)
 
@@ -73,7 +74,15 @@ def data_table():
 @app.route('/')
 @login_required
 def index():
+    # Ana sayfayı (main.html) göster
     return render_template('main.html')
+
+
+@app.route('/ref')
+@login_required
+def ref():
+    # Referans sayfasını (ref.html) göster
+    return render_template('ref.html')
 
 
 @app.route('/submit', methods=['POST'])
@@ -124,12 +133,15 @@ def submit():
     # Veritabanına patientData ekleyin
     my_db.patientData.insert_one(patient_data)
 
+    # Formdan gelen verileri al ve veritabanına kaydet
+    # Kan değerlerini içeren Excel dosyasını işle ve veritabanına ekle
     return redirect(url_for('index'))
 
 
 @app.route('/api/diagnosis', methods=['GET'])
 @login_required
 def get_all_inventory():
+    # Tüm hasta verilerini JSON formatında döndür
     try:
         patients = list(my_db.patientData.find())
         for patient in patients:
@@ -142,6 +154,7 @@ def get_all_inventory():
 @app.route('/api/patients/<string:patient_name>', methods=['GET'])
 @login_required
 def get_patient_by_name(patient_name):
+    # Belirli bir isme sahip hastanın verilerini JSON formatında döndür
     try:
         patient = my_db.patientData.find_one({"name": patient_name})
         if patient:

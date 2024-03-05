@@ -84,6 +84,7 @@
     }
 </style>
 <script>
+    // Excel dosyası indirme işlevi
     function downloadExcel() {
         $.ajax({
             url: '/api/diagnosis', // Flask endpoint
@@ -144,6 +145,7 @@
         });
     }
 
+    // Hasta bilgilerini yazdırma işlevi
     function printPatientData() {
         var patientName = prompt("Please enter the patient's name:");
 
@@ -205,6 +207,7 @@
         });
     }
 
+    // DataTables eklentisini etkinleştirme
     $(document).ready(function() {
         $('#patientTable').DataTable();
     });
@@ -222,6 +225,7 @@
     <table id="patientTable" class="table table-bordered">
         <thead class="thead-dark">
             <tr>
+                <!-- Tablo başlıkları -->
                 <th>Name</th>
                 <th>Age</th>
                 <th>Weight</th>
@@ -239,6 +243,7 @@
         <tbody>
             {% for patient in patients %}
             <tr>
+                <!-- Hasta bilgileri -->
                 <td>{{ patient.name }}</td>
                 <td>{{ patient.age }}</td>
                 <td>{{ patient.weight }}</td>
@@ -251,6 +256,7 @@
                 <td>{{ patient.bloodPressure }}</td>
                 <td>{{ patient.symptom }}</td>
                 <td>
+                    <!-- Kan değerleri için modal tetikleyici buton -->
                     <button type="button" class="btn btn-info" data-toggle="modal" data-target="#bloodValuesModal{{ patient._id }}">☰</button>
                 </td>
             </tr>
@@ -260,6 +266,7 @@
 </div>
 
 {% for patient in patients %}
+<!-- Kan değerleri için modal -->
 <div class="modal fade" id="bloodValuesModal{{ patient._id }}" tabindex="-1" role="dialog" aria-labelledby="bloodValuesModalLabel" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -271,7 +278,7 @@
       </div>
       <div class="modal-body">
         {% for value in patient.blood_values %}
-
+        <!-- Kan değerleri bilgileri -->
         <p><strong>Blood Type: </strong> {{  value.bloodType }} </p>
         <p><strong>RBC: </strong> {{ value.rbc }} </p>
         <p><strong>Hemoglobin: </strong> {{ value.hemoglobin }} </p>

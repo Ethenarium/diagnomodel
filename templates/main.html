@@ -6,9 +6,30 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
 <style type="text/css">
+    .newData {
+        border-radius: 10px;
+        padding: 8px 16px;
+        color: white;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease-in-out;
+        font-size: 14px;
+        background-color: #50C4ED; /* Change the background color */
+    }
 
+    .newData:hover {
+        background-color: #387ADF;
+        transform: scale(1.1);
+    }
+
+    .newData:active {
+        background-color: #387ADF;
+        transform: scale(0.9);
+    }
 </style>
 <script>
+    // BMI hesaplama işlevi
     document.addEventListener("DOMContentLoaded", function() {
         function calculateBMI() {
             var weight = document.getElementById('weight').value; // Kilonun alınması
@@ -34,7 +55,9 @@
     <h2 class="text-center">Patient Data Form</h2>
     <div class="row justify-content-center">
         <div class="col-md-8">
+            <!-- Hasta veri formu -->
             <form action="/submit" method="post" enctype="multipart/form-data">
+                <!-- İsim, yaş, kilo, boy, sigara, alkol, uyuşturucu, semptom, aile geçmişi, kan basıncı ve kan değerleri alanları -->
                 <div class="form-group">
                     <label for="name">Name:</label>
                     <input type="text" class="form-control" name="name" id="name" required>
@@ -57,11 +80,11 @@
                 </div>
                 <div class="form-check mb-3">
                     <input type="checkbox" class="form-check-input" name="sigara" id="sigara">
-                    <label class="form-check-label" for="sigara">Sigara</label>
+                    <label class="form-check-label" for="sigara">Smoke</label>
                 </div>
                 <div class="form-check mb-3">
                     <input type="checkbox" class="form-check-input" name="alkol" id="alkol">
-                    <label class="form-check-label" for="alkol">Alkol</label>
+                    <label class="form-check-label" for="alkol">Alcohol</label>
                 </div>
                 <div class="form-check mb-3">
                     <input type="checkbox" class="form-check-input" name="drug" id="drug">
@@ -83,7 +106,7 @@
                     <label for="bloodValues">Blood Values (Excel):</label>
                     <input type="file" class="form-control-file" name="bloodValues" id="bloodValues" accept=".xlsx">
                 </div>
-                <button type="submit" class="btn btn-primary">Submit</button>
+                <button type="submit" class="newData">Submit</button>
             </form>
         </div>
     </div>
