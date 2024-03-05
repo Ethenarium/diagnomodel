@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import functools
 import os
 from flask import Flask, redirect, render_template, request, session, url_for, jsonify
@@ -9,22 +9,22 @@ import pandas as pd
 from bson.objectid import ObjectId
 
 
-app = Flask('app')
-app.secret_key = config('secret')
-my_client = pymongo.MongoClient(config('mongo_url'))
-my_db = my_client[config('db_name')]
+app = Flask('app')  # Flask uygulaması oluşturur
+app.secret_key = config('secret')  # Flask uygulamasının gizli anahtarını .env dosyasından ayarlar
+my_client = pymongo.MongoClient(config('mongo_url'))  # MongoDB istemcisini .env dosyasındaki URL ile başlatır
+my_db = my_client[config('db_name')]  # MongoDB veritabanını .env dosyasındaki isimle seçer
 
-if not os.path.exists('uploads'):
-    os.makedirs('uploads')
+if not os.path.exists('uploads'):  # Eğer 'uploads' klasörü mevcut değilse,
+    os.makedirs('uploads')  # 'uploads' klasörünü oluşturur
 
 
-def get_sequence(seq_name):
+def get_sequence(seq_name):  # Veritabanında belirli bir sayaç için sıra numarası alır veya oluşturur
     return my_db.counters.find_one_and_update(filter={"_id": seq_name}, update={"$inc": {"seq": 1}}, upsert=True)["seq"]
 
 
-def my_log(action, message, user_name):
-    log_id = get_sequence("log")
-    return my_db.logs.insert_one({
+def my_log(action, message, user_name):  # Kullanıcı eylemlerini kaydetmek için bir log kaydı oluşturur
+    log_id = get_sequence("log")  # Log için benzersiz bir ID alır
+    return my_db.logs.insert_one({  # Log kaydını veritabanına ekler
         "_id": log_id,
         "action": action,
         "message": message,
@@ -33,34 +33,34 @@ def my_log(action, message, user_name):
     })
 
 
-def my_logon(username, password):
-    user_info = my_db.users.find_one({"_id": username})
-    if user_info and password == user_info.get("password"):
-        session["user_info"] = user_info
-        return user_info
+def my_logon(username, password):  # Kullanıcı adı ve şifre ile giriş yapmayı sağlar
+    user_info = my_db.users.find_one({"_id": username})  # Kullanıcı adına göre kullanıcı bilgilerini arar
+    if user_info and password == user_info.get("password"):  # Eğer kullanıcı bulunursa ve şifre eşleşirse,
+        session["user_info"] = user_info  # Kullanıcı bilgilerini oturum değişkenine kaydeder
+        return user_info  # Kullanıcı bilgilerini döndürür
     else:
-        return None
+        return None  # Eğer kullanıcı bulunamazsa veya şifre eşleşmezse, None döndürür
 
 
-def login_required(route):
+def login_required(route):  # Giriş yapmış kullanıcılar için koruma sağlayan bir dekoratör
     @functools.wraps(route)
     def route_wrapper(*args, **kwargs):
-        if session.get("user_info") is None:
-            return redirect(url_for("login"))
-        return route(*args, **kwargs)
-    return route_wrapper
+        if session.get("user_info") is None:  # Eğer kullanıcı oturumu mevcut değilse,
+            return redirect(url_for("login"))  # Giriş sayfasına yönlendirir
+        return route(*args, **kwargs)  # Aksi takdirde, asıl rotayı çağırır
+    return route_wrapper  # Dekoratörü döndürür
 
 
 @app.route('/login', methods=["GET", "POST"])
 def login():
-    if request.method == 'POST':
+    if request.method == 'POST':  # Eğer form gönderilmişse kullanıcı adı ve şifre al
         username = request.form.get("username")
         pwd = request.form.get("pwd")
         user_info = my_logon(username=username, password=pwd)
         if user_info:
             return redirect(url_for("index"))
         else:
-            return render_template("login.html", error="Invalid username or password")
+            return render_template("main.html", error="Invalid username or password")
     return render_template("login.html")
 
 
