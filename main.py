@@ -1,11 +1,13 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import functools
 import os
 from flask import Flask, redirect, render_template, request, session, url_for, jsonify
-from werkzeug.utils import secure_filename
+from werkzeug.utils import secure_filename  # secure_filename için eklendi
 import pymongo
 from decouple import config
-import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd  # pandas için eklendi
 from bson.objectid import ObjectId
 
 
@@ -22,9 +24,9 @@ def get_sequence(seq_name):  # Veritabanında belirli bir sayaç için sıra num
     return my_db.counters.find_one_and_update(filter={"_id": seq_name}, update={"$inc": {"seq": 1}}, upsert=True)["seq"]
 
 
-def my_log(action, message, user_name):  # Kullanıcı eylemlerini kaydetmek için bir log kaydı oluşturur
-    log_id = get_sequence("log")  # Log için benzersiz bir ID alır
-    return my_db.logs.insert_one({  # Log kaydını veritabanına ekler
+def my_log(action, message, user_name):
+    log_id = get_sequence("log")
+    return my_db.logs.insert_one({
         "_id": log_id,
         "action": action,
         "message": message,
@@ -33,40 +35,39 @@ def my_log(action, message, user_name):  # Kullanıcı eylemlerini kaydetmek iç
     })
 
 
-def my_logon(username, password):  # Kullanıcı adı ve şifre ile giriş yapmayı sağlar
-    user_info = my_db.users.find_one({"_id": username})  # Kullanıcı adına göre kullanıcı bilgilerini arar
-    if user_info and password == user_info.get("password"):  # Eğer kullanıcı bulunursa ve şifre eşleşirse,
-        session["user_info"] = user_info  # Kullanıcı bilgilerini oturum değişkenine kaydeder
-        return user_info  # Kullanıcı bilgilerini döndürür
+def my_logon(username, password):
+    user_info = my_db.users.find_one({"_id": username})
+    if user_info and password == user_info.get("password"):
+        session["user_info"] = user_info
+        return user_info
     else:
-        return None  # Eğer kullanıcı bulunamazsa veya şifre eşleşmezse, None döndürür
+        return None
 
 
-def login_required(route):  # Giriş yapmış kullanıcılar için koruma sağlayan bir dekoratör
+def login_required(route):
     @functools.wraps(route)
     def route_wrapper(*args, **kwargs):
-        if session.get("user_info") is None:  # Eğer kullanıcı oturumu mevcut değilse,
-            return redirect(url_for("login"))  # Giriş sayfasına yönlendirir
-        return route(*args, **kwargs)  # Aksi takdirde, asıl rotayı çağırır
-    return route_wrapper  # Dekoratörü döndürür
+        if session.get("user_info") is None:
+            return redirect(url_for("login"))
+        return route(*args, **kwargs)
+    return route_wrapper
 
 
 @app.route('/login', methods=["GET", "POST"])
 def login():
-    if request.method == 'POST':  # Eğer form gönderilmişse kullanıcı adı ve şifre al
+    if request.method == 'POST':
         username = request.form.get("username")
         pwd = request.form.get("pwd")
         user_info = my_logon(username=username, password=pwd)
         if user_info:
             return redirect(url_for("index"))
         else:
-            return render_template("main.html", error="Invalid username or password")
+            return render_template("login.html", error="Invalid username or password")
     return render_template("login.html")
 
 
 @app.route('/dataTable')
 def data_table():
-    # Veritabanından hasta verilerini çek ve dataTable.html şablonuna gönder
     patients = list(my_db.patientData.find())
     return render_template('dataTable.html', patients=patients)
 
@@ -74,15 +75,7 @@ def data_table():
 @app.route('/')
 @login_required
 def index():
-    # Ana sayfayı (main.html) göster
     return render_template('main.html')
-
-
-@app.route('/ref')
-@login_required
-def ref():
-    # Referans sayfasını (ref.html) göster
-    return render_template('ref.html')
 
 
 @app.route('/submit', methods=['POST'])
@@ -100,7 +93,6 @@ def submit():
     patient_data = {
         "_id": ObjectId(),
         "name": name,
-        "gender": request.form.get("gender"),
         "age": age,
         "weight": weight,
         "height": height,
@@ -109,8 +101,7 @@ def submit():
         "alkol": "alkol" in request.form,
         "drug": "drug" in request.form,
         "familyHistory": request.form.get("familyHistory"),
-        "bloodPressureMin": int(request.form.get("bloodPressureMin")),
-        "bloodPressureMax": int(request.form.get("bloodPressureMax")),
+        "bloodPressure": request.form.get("bloodPressure"),
         "symptom": request.form.get("symptom"),
         "blood_values": []
     }
@@ -135,15 +126,12 @@ def submit():
     # Veritabanına patientData ekleyin
     my_db.patientData.insert_one(patient_data)
 
-    # Formdan gelen verileri al ve veritabanına kaydet
-    # Kan değerlerini içeren Excel dosyasını işle ve veritabanına ekle
     return redirect(url_for('index'))
 
 
 @app.route('/api/diagnosis', methods=['GET'])
 @login_required
 def get_all_inventory():
-    # Tüm hasta verilerini JSON formatında döndür
     try:
         patients = list(my_db.patientData.find())
         for patient in patients:
@@ -156,7 +144,6 @@ def get_all_inventory():
 @app.route('/api/patients/<string:patient_name>', methods=['GET'])
 @login_required
 def get_patient_by_name(patient_name):
-    # Belirli bir isme sahip hastanın verilerini JSON formatında döndür
     try:
         patient = my_db.patientData.find_one({"name": patient_name})
         if patient:
