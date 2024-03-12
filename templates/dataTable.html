@@ -9,6 +9,15 @@
 <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 <style type="text/css">
+    .container {
+        width: 105%;
+    }
+
+    #patientTable td, #patientTable th {
+        padding: 15px; /* Hücre içi boşluğu artır */
+        font-size: 16px; /* Yazı tipi boyutunu artır */
+    }
+
     .btn-info {
         background-color: #535C91; /* Bootstrap info rengi */
         color: white;
@@ -92,8 +101,8 @@
             success: function (patients) {
                 // Define the headers for the Excel file
                 const headers = [
-                    "Name", "Age", "Weight", "Height", "BMI", "Sigara", "Alkol", "Drug",
-                    "FamilyHistory", "BloodPressure", "Symptom"
+                    "Name", "Gender", "Age", "Weight", "Height", "BMI", "Sigara", "Alkol", "Drug",
+                    "FamilyHistory", "BloodPressureMin", "BloodPressureMax", "Symptom"
                 ];
 
                 // Add headers for blood values based on the first patient's data
@@ -111,6 +120,7 @@
                     // Create a base object with patient details
                     const patientBase = {
                         Name: patient.name,
+                        Gender: patient.gender,
                         Age: patient.age,
                         Weight: patient.weight,
                         Height: patient.height,
@@ -119,7 +129,8 @@
                         Alkol: patient.alkol ? "Yes" : "No",
                         Drug: patient.drug ? "Yes" : "No",
                         FamilyHistory: patient.familyHistory,
-                        BloodPressure: patient.bloodPressure,
+                        BloodPressureMin: patient.bloodPressureMin,
+                        BloodPressureMax: patient.bloodPressureMax,
                         Symptom: patient.symptom
                     };
 
@@ -227,6 +238,7 @@
             <tr>
                 <!-- Tablo başlıkları -->
                 <th>Name</th>
+                <th>Gender</th>
                 <th>Age</th>
                 <th>Weight</th>
                 <th>Height</th>
@@ -245,15 +257,17 @@
             <tr>
                 <!-- Hasta bilgileri -->
                 <td>{{ patient.name }}</td>
+                <td>{{ patient.gender }}</td>
                 <td>{{ patient.age }}</td>
                 <td>{{ patient.weight }}</td>
                 <td>{{ patient.height }}</td>
-                <td>{{ patient.bmi }}</td>
+                <td class="{% if patient.gender == 'Male' %}{% if patient.bmi >= 20 and patient.bmi <= 25 %}text-success{% elif patient.bmi < 20 or patient.bmi > 25 %}text-danger{% else %}text-warning{% endif %}{% else %}{% if patient.bmi >= 19 and patient.bmi <= 24 %}text-success{% elif patient.bmi < 19 or patient.bmi > 24 %}text-danger{% else %}text-warning{% endif %}{% endif %}">{{ patient.bmi }}</td>
                 <td>{{ patient.sigara }}</td>
                 <td>{{ patient.alkol }}</td>
                 <td>{{ patient.drug }}</td>
                 <td>{{ patient.familyHistory }}</td>
-                <td>{{ patient.bloodPressure }}</td>
+                <td class="{% if patient.bloodPressureMin >= 70 and patient.bloodPressureMin <= 90 and patient.bloodPressureMax >= 120 and patient.bloodPressureMax <= 130 %}text-success{% elif patient.bloodPressureMin < 70 or patient.bloodPressureMin > 90
+                or patient.bloodPressureMax < 120 or patient.bloodPressureMax > 130 %}text-danger{% else %}text-warning{% endif %}">{{ patient.bloodPressureMin }}, {{ patient.bloodPressureMax }}</td>
                 <td>{{ patient.symptom }}</td>
                 <td>
                     <!-- Kan değerleri için modal tetikleyici buton -->
@@ -277,28 +291,110 @@
         </button>
       </div>
       <div class="modal-body">
-        {% for value in patient.blood_values %}
-        <!-- Kan değerleri bilgileri -->
-        <p><strong>Blood Type: </strong> {{  value.bloodType }} </p>
-        <p><strong>RBC: </strong> {{ value.rbc }} </p>
-        <p><strong>Hemoglobin: </strong> {{ value.hemoglobin }} </p>
-        <p><strong>Hematocrit: </strong> {{ value.hematocrit }}</p>
-        <p><strong>MCV: </strong> {{ value.mcv }} </p>
-        <p><strong>MCH: </strong> {{ value.mch }} </p>
-        <p><strong>MCHC: </strong> {{ value.mchc }} </p>
-        <p><strong>RDW: </strong> {{ value.rdw }} </p>
-        <p><strong>WBC: </strong> {{ value.wbc }}</p>
-        <p><strong>Neutrophill: </strong> {{ value.neutrophill }}</p>
-        <p><strong>Lymphocyte: </strong> {{ value.lymphocyte }} </p>
-        <p><strong>Monocyte: </strong> {{ value.monocyte }}</p>
-        <p><strong>Eosinophill: </strong> {{ value.eosinophill }}</p>
-        <p><strong>Basophill: </strong> {{ value.basophill }}</p>
-        <p><strong>Platelet: </strong> {{ value.platelet }}</p>
-        <p><strong>PDW: </strong> {{ value.pdw }}</p>
-        <p><strong>MPV: </strong> {{ value.mpv }}</p>
-        <p><strong>PCT: </strong> {{ value.pct }}</p>
-
-        {% endfor %}
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Value</th>
+              <th>Reference Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for value in patient.blood_values %}
+            <!-- Kan değerleri bilgileri -->
+            <tr>
+              <td>Blood Type</td>
+              <td>{{ value.bloodType }}</td>
+              <td>N/A</td>
+            </tr>
+            <tr>
+              <td>RBC (x10^12/L)</td>
+              <td>{{ value.rbc }}</td>
+              <td class="{% if patient.gender == 'Male' %}{% if value.rbc < 4.7 or value.rbc > 6.1 %}text-danger{% elif value.rbc < 4.8 or value.rbc > 6.0 %}text-warning{% else %}text-success{% endif %}{% else %}{% if value.rbc < 4.2 or value.rbc > 5.4 %}text-danger{% elif value.rbc < 4.3 or value.rbc > 5.3 %}text-warning{% else %}text-success{% endif %}{% endif %}">{% if patient.gender == 'Male' %}4.7 - 6.1{% else %}4.2 - 5.4{% endif %}</td>
+            </tr>
+            <tr>
+                <td>Hemoglobin (g/dL)</td>
+                <td>{{ value.hemoglobin }}</td>
+                <td class="{% if patient.gender == 'Male' %}{% if value.hemoglobin < 13.8 or value.hemoglobin > 17.2 %}text-danger{% elif value.hemoglobin < 14 or value.hemoglobin > 17 %}text-warning{% else %}text-success{% endif %}{% else %}{% if value.hemoglobin < 12.1 or value.hemoglobin > 15.1 %}text-danger{% elif value.hemoglobin < 12.2 or value.hemoglobin > 15 %}text-warning{% else %}text-success{% endif %}{% endif %}">{% if patient.gender == 'Male' %}13.8 - 17.2{% else %}12.1 - 15.1{% endif %}</td>
+            </tr>
+            <tr>
+                <td>WBC (x10^9/L)</td>
+                <td>{{ value.wbc }}</td>
+                <td class="{% if patient.gender == 'Male' %}{% if value.wbc < 4.5 or value.wbc > 11 %}text-danger{% elif value.wbc < 4.6 or value.wbc > 10.9 %}text-warning{% else %}text-success{% endif %}{% else %}{% if value.wbc < 4.5 or value.wbc > 11 %}text-danger{% elif value.wbc < 4.6 or value.wbc > 10.9 %}text-warning{% else %}text-success{% endif %}{% endif %}">{% if patient.gender == 'Male' %}4.5 - 11{% else %}4.5 - 11{% endif %}</td>
+            </tr>
+            <tr>
+                <td>Hematocrit (%)</td>
+                <td>{{ value.hematocrit }}</td>
+                <td class="{% if patient.gender == 'Male' %}{% if value.hematocrit < 40.7 or value.hematocrit > 50.3 %}text-danger{% elif value.hematocrit < 40.8 or value.hematocrit > 50.2 %}text-warning{% else %}text-success{% endif %}{% else %}{% if value.hematocrit < 36.1 or value.hematocrit > 44.3 %}text-danger{% elif value.hematocrit < 36.2 or value.hematocrit > 44.2 %}text-warning{% else %}text-success{% endif %}{% endif %}">{% if patient.gender == 'Male' %}40.7 - 50.3{% else %}36.1 - 44.3{% endif %}</td>
+            </tr>
+            <tr>
+                <td>MCV (fL)</td>
+                <td>{{ value.mcv }}</td>
+                <td class="{% if patient.gender == 'Male' %}{% if value.mcv < 80 or value.mcv > 96 %}text-danger{% elif value.mcv < 81 or value.mcv > 95 %}text-warning{% else %}text-success{% endif %}{% else %}{% if value.mcv < 81 or value.mcv > 99 %}text-danger{% elif value.mcv < 82 or value.mcv > 98 %}text-warning{% else %}text-success{% endif %}{% endif %}">{% if patient.gender == 'Male' %}80 - 96{% else %}81 - 99{% endif %}</td>
+            </tr>
+            <tr>
+                <td>MCH (pg)</td>
+                <td>{{ value.mch }}</td>
+                <td class="{% if patient.gender == 'Male' %}{% if value.mch < 27.5 or value.mch > 33.2 %}text-danger{% elif value.mch < 27.6 or value.mch > 33.1 %}text-warning{% else %}text-success{% endif %}{% else %}{% if value.mch < 27 or value.mch > 32 %}text-danger{% elif value.mch < 27.1 or value.mch > 31.9 %}text-warning{% else %}text-success{% endif %}{% endif %}">{% if patient.gender == 'Male' %}27.5 - 33.2{% else %}27.0 - 32.0{% endif %}</td>
+            </tr>
+            <tr>
+                <td>MCHC (g/dL)</td>
+                <td>{{ value.mchc }}</td>
+                <td class="{% if patient.gender == 'Male' %}{% if value.mchc < 32 or value.mchc > 36 %}text-danger{% elif value.mchc < 32.1 or value.mchc > 35.9 %}text-warning{% else %}text-success{% endif %}{% else %}{% if value.mchc < 32 or value.mchc > 36 %}text-danger{% elif value.mchc < 32.1 or value.mchc > 35.9 %}text-warning{% else %}text-success{% endif %}{% endif %}">{% if patient.gender == 'Male' %}32.0 - 36.0{% else %}32.0 - 36.0{% endif %}</td>
+            </tr>
+            <tr>
+                <td>RDW (%)</td>
+                <td>{{ value.rdw }}</td>
+                <td class="{% if value.rdw < 11.5 or value.rdw > 14.5 %}text-danger{% elif value.rdw < 11.6 or value.rdw > 14.4 %}text-warning{% else %}text-success{% endif %}">11.5 - 14.5</td>
+            </tr>
+            <tr>
+                <td>Neutrophils (%)</td>
+                <td>{{ value.neutrophill }}</td>
+                <td class="{% if value.neutrophill < 40 or value.neutrophill > 60 %}text-danger{% elif value.neutrophill < 40.1 or value.neutrophill > 59.9 %}text-warning{% else %}text-success{% endif %}">40 - 60</td>
+            </tr>
+            <tr>
+                <td>Lymphocytes (%)</td>
+                <td>{{ value.lymphocyte }}</td>
+                <td class="{% if value.lymphocyte < 20 or value.lymphocyte > 40 %}text-danger{% elif value.lymphocyte < 20.1 or value.lymphocyte > 39.9 %}text-warning{% else %}text-success{% endif %}">20 - 40</td>
+            </tr>
+            <tr>
+                <td>Monocytes (%)</td>
+                <td>{{ value.monocyte }}</td>
+                <td class="{% if value.monocyte < 2 or value.monocyte > 8 %}text-danger{% elif value.monocyte < 2.1 or value.monocyte > 7.9 %}text-warning{% else %}text-success{% endif %}">2 - 8</td>
+            </tr>
+            <tr>
+                <td>Eosinophils (%)</td>
+                <td>{{ value.eosinophill }}</td>
+                <td class="{% if value.eosinophill < 1 or value.eosinophill > 4 %}text-danger{% elif value.eosinophill < 1.1 or value.eosinophill > 3.9 %}text-warning{% else %}text-success{% endif %}">1 - 4</td>
+            </tr>
+            <tr>
+                <td>Basophils (%)</td>
+                <td>{{ value.basophill }}</td>
+                <td class="{% if value.basophill < 0.5 or value.basophill > 1 %}text-danger{% elif value.basophill < 0.6 or value.basophill > 0.9 %}text-warning{% else %}text-success{% endif %}">0.5 - 1</td>
+            </tr>
+            <tr>
+                <td>Platelets (x10^9/L)</td>
+                <td>{{ value.platelet }}</td>
+                <td class="{% if value.platelet < 150 or value.platelet > 400 %}text-danger{% elif value.platelet < 150.1 or value.platelet > 399.9 %}text-warning{% else %}text-success{% endif %}">150 - 400</td>
+            </tr>
+            <tr>
+                <td>PDW (%)</td>
+                <td>{{ value.pdw }}</td>
+                <td class="{% if value.pdw < 9 or value.pdw > 17 %}text-danger{% elif value.pdw < 9.1 or value.pdw > 16.9 %}text-warning{% else %}text-success{% endif %}">9 - 17</td>
+            </tr>
+            <tr>
+                <td>MPV (fL)</td>
+                <td>{{ value.mpv }}</td>
+                <td class="{% if value.mpv < 7.4 or value.mpv > 10.4 %}text-danger{% elif value.mpv < 7.5 or value.mpv > 10.3 %}text-warning{% else %}text-success{% endif %}">7.4 - 10.4</td>
+            </tr>
+            <tr>
+                <td>PCT (%)</td>
+                <td>{{ value.pct }}</td>
+                <td class="{% if value.pct < 0.108 or value.pct > 0.282 %}text-danger{% elif value.pct < 0.109 or value.pct > 0.281 %}text-warning{% else %}text-success{% endif %}">0.108 - 0.282</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>

@@ -100,6 +100,7 @@ def submit():
     patient_data = {
         "_id": ObjectId(),
         "name": name,
+        "gender": request.form.get("gender"),
         "age": age,
         "weight": weight,
         "height": height,
@@ -108,7 +109,8 @@ def submit():
         "alkol": "alkol" in request.form,
         "drug": "drug" in request.form,
         "familyHistory": request.form.get("familyHistory"),
-        "bloodPressure": request.form.get("bloodPressure"),
+        "bloodPressureMin": int(request.form.get("bloodPressureMin")),
+        "bloodPressureMax": int(request.form.get("bloodPressureMax")),
         "symptom": request.form.get("symptom"),
         "blood_values": []
     }
