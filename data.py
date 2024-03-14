@@ -3,7 +3,7 @@ import pandas as pd
 
 np.random.seed(0)
 
-sample_size = 100000
+sample_size = 100
 
 multipliers = {
     'age_multiplier': 1,

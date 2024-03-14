@@ -90,6 +90,9 @@ def submit():
     # BMI hesaplaması
     bmi = weight / ((height / 100) ** 2) if height > 0 else 0
 
+    # Semptomları formdan al ve listeye dönüştür
+    symptoms = request.form.getlist("symptoms")
+
     patient_data = {
         "_id": ObjectId(),
         "name": name,
@@ -97,12 +100,9 @@ def submit():
         "weight": weight,
         "height": height,
         "bmi": round(bmi, 2),  # BMI değerini yuvarla
-        "sigara": "sigara" in request.form,
-        "alkol": "alkol" in request.form,
-        "drug": "drug" in request.form,
         "familyHistory": request.form.get("familyHistory"),
         "bloodPressure": request.form.get("bloodPressure"),
-        "symptom": request.form.get("symptom"),
+        "symptoms": symptoms,  # Semptom listesini ekle
         "blood_values": []
     }
 
@@ -127,6 +127,7 @@ def submit():
     my_db.patientData.insert_one(patient_data)
 
     return redirect(url_for('index'))
+
 
 
 @app.route('/api/diagnosis', methods=['GET'])
