@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd  # pandas için eklendi
 from bson.objectid import ObjectId
-
+import json
 
 app = Flask('app')  # Flask uygulaması oluşturur
 app.secret_key = config('secret')  # Flask uygulamasının gizli anahtarını .env dosyasından ayarlar
@@ -78,33 +78,46 @@ def index():
     return render_template('main.html')
 
 
+@app.route('/ref')
+@login_required
+def ref():
+    return render_template('ref.html')
+
+
 @app.route('/submit', methods=['POST'])
 @login_required
 def submit():
     # Form verilerini al
     name = request.form.get("name")
-    age = int(request.form.get("age"))
+    age = int(request.form.get("age", 0))  # Use 0 as default if age is not provided
     weight = float(request.form.get("weight", 0))  # Eğer değer yoksa 0 olarak kabul et
     height = float(request.form.get("height", 0))  # Eğer değer yoksa 0 olarak kabul et
+    bloodPressureMin = float(request.form.get("bloodPressureMin", 0))
+    bloodPressureMax = float(request.form.get("bloodPressureMax", 0))
 
     # BMI hesaplaması
     bmi = weight / ((height / 100) ** 2) if height > 0 else 0
 
-    # Semptomları formdan al ve listeye dönüştür
-    symptoms = request.form.getlist("symptoms")
-
     patient_data = {
         "_id": ObjectId(),
         "name": name,
+        "gender": request.form.get("gender", "None"),
         "age": age,
         "weight": weight,
         "height": height,
-        "bmi": round(bmi, 2),  # BMI değerini yuvarla
-        "familyHistory": request.form.get("familyHistory"),
-        "bloodPressure": request.form.get("bloodPressure"),
-        "symptoms": symptoms,  # Semptom listesini ekle
-        "blood_values": []
+        "bmi": round(bmi, 2),
+        "familyHistory": request.form.get("familyHistory", "None"),  # Default value if not provided
+        "bloodPressureMin": bloodPressureMin,
+        "bloodPressureMax": bloodPressureMax,
+        "blood_values": [],
+        "symptoms": [
+
+        ]
     }
+
+    symptoms_data = json.loads(request.form.get('symptoms', '{}'))
+    # Semptomları patient_data içine ekle
+    patient_data["symptoms"] = symptoms_data
 
     # Kan değerlerini Excel dosyasından oku
     if 'bloodValues' in request.files:
@@ -128,6 +141,31 @@ def submit():
 
     return redirect(url_for('index'))
 
+
+@app.template_filter('symptom_text')
+def symptom_text(value):
+    if value == 0:
+        return 'Never'
+    elif value == 0.25:
+        return 'Low'
+    elif value == 0.50:
+        return 'Medium'
+    elif value == 1:
+        return 'High'
+    else:
+        return 'Unknown'
+
+
+@app.template_filter('symptom_class')
+def symptom_class(value):
+    if value == 0.25:
+        return 'text-success'
+    elif value == 0.50:
+        return 'text-warning'
+    elif value == 1:
+        return 'text-danger'
+    else:
+        return ''
 
 
 @app.route('/api/diagnosis', methods=['GET'])

@@ -3,8 +3,8 @@
 {% block head %}
 {{ super() }}
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <style type="text/css">
     .newData {
         border-radius: 10px;
@@ -62,6 +62,33 @@
         min-width: 190px; /* Etiketlerin genişliğini sabitle */
         display: inline-block; /* Etiketleri blok olarak ayarla */
     }
+
+    #success-message {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #28a745;
+    }
+
+    #loading-animation {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    .spinner {
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-left-color: #09f;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
 </style>
 <script>
     // BMI hesaplama işlevi
@@ -82,130 +109,210 @@
         document.getElementById('height').addEventListener('input', calculateBMI);
     });
 
-    function saveSymptomLevels() {
-        // Tüm semptomların seviyelerini oku ve bir nesneye kaydet
-        var symptomLevels = {
-        smokeLevel: document.querySelector('input[name="smokeLevel"]:checked').value,
-        alcoholLevel: document.querySelector('input[name="alcoholLevel"]:checked').value,
-        headacheLevel: document.querySelector('input[name="headacheLevel"]:checked').value,
-        chestPainLevel: document.querySelector('input[name="chestPainLevel"]:checked').value,
-        shortnessOfBreathLevel: document.querySelector('input[name="shortnessOfBreathLevel"]:checked').value,
-        fatigueLevel: document.querySelector('input[name="fatigueLevel"]:checked').value,
-        feverLevel: document.querySelector('input[name="feverLevel"]:checked').value,
-        dizzinessLevel: document.querySelector('input[name="dizzinessLevel"]:checked').value,
-        palpitationLevel: document.querySelector('input[name="palpitationLevel"]:checked').value,
-        swellingLevel: document.querySelector('input[name="swellingLevel"]:checked').value,
-        irregularHeartbeatLevel: document.querySelector('input[name="irregularHeartbeatLevel"]:checked').value,
-        nauseaOrVomitLevel: document.querySelector('input[name="nauseaOrVomitLevel"]:checked').value,
-        coldSweatsLevel: document.querySelector('input[name="coldSweatsLevel"]:checked').value,
-        indigestionOrHeartburnLevel: document.querySelector('input[name="indigestionOrHeartburnLevel"]:checked').value,
-        painToArmLevel: document.querySelector('input[name="painToArmLevel"]:checked').value,
-        jawPainLevel: document.querySelector('input[name="jawPainLevel"]:checked').value,
-        backPainLevel: document.querySelector('input[name="backPainLevel"]:checked').value,
-        faintingLevel: document.querySelector('input[name="faintingLevel"]:checked').value,
-        persistentCoughLevel: document.querySelector('input[name="persistentCoughLevel"]:checked').value,
-        difficultySleepingLevel: document.querySelector('input[name="difficultySleepingLevel"]:checked').value,
-        suddenWeightGainLevel: document.querySelector('input[name="suddenWeightGainLevel"]:checked').value,
-        rapidOrIrregularPulseLevel: document.querySelector('input[name="rapidOrIrregularPulseLevel"]:checked').value,
-        extremeWeaknessLevel: document.querySelector('input[name="extremeWeaknessLevel"]:checked').value,
-        lossOfConsciousnessLevel: document.querySelector('input[name="lossOfConsciousnessLevel"]:checked').value,
-        blurredVisionLevel: document.querySelector('input[name="blurredVisionLevel"]:checked').value,
-        legPainLevel: document.querySelector('input[name="legPainLevel"]:checked').value,
-        numbnessInLimbsLevel: document.querySelector('input[name="numbnessInLimbsLevel"]:checked').value,
-        coldLimbsLevel: document.querySelector('input[name="coldLimbsLevel"]:checked').value,
-        cyanosisLevel: document.querySelector('input[name="cyanosisLevel"]:checked').value,
-        poorGrowthInInfantsLevel: document.querySelector('input[name="poorGrowthInInfantsLevel"]:checked').value,
-        recurrentRespiratoryInfectionsLevel: document.querySelector('input[name="recurrentRespiratoryInfectionsLevel"]:checked').value,
-        sweatingLevel: document.querySelector('input[name="sweatingLevel"]:checked').value,
-        confusionLevel: document.querySelector('input[name="confusionLevel"]:checked').value,
-        numbnessOrWeaknessInLegsLevel: document.querySelector('input[name="numbnessOrWeaknessInLegsLevel"]:checked').value,
-        coldnessInLowerLegOrFootLevel: document.querySelector('input[name="coldnessInLowerLegOrFootLevel"]:checked').value,
-        soresOrWoundsOnLegsOrFeetLevel: document.querySelector('input[name="soresOrWoundsOnLegsOrFeetLevel"]:checked').value
-    };
+    function saveSymptoms() {
+        // Semptomların seviyelerini al
+        var smokeLevel = parseFloat($('input[name="smokeLevel"]:checked').val());
+        var alcoholLevel = parseFloat($('input[name="alcoholLevel"]:checked').val());
+        var headacheLevel = parseFloat($('input[name="headacheLevel"]:checked').val());
+        var chestPainLevel = parseFloat($('input[name="chestPainLevel"]:checked').val());
+        var shortnessOfBreathLevel = parseFloat($('input[name="shortnessOfBreathLevel"]:checked').val());
+        var fatigueLevel = parseFloat($('input[name="fatigueLevel"]:checked').val());
+        var feverLevel = parseFloat($('input[name="feverLevel"]:checked').val());
+        var dizzinessLevel = parseFloat($('input[name="dizzinessLevel"]:checked').val());
+        var swellingLevel = parseFloat($('input[name="swellingLevel"]:checked').val());
+        var irregularHeartbeatLevel = parseFloat($('input[name="irregularHeartbeatLevel"]:checked').val());
+        var nauseaOrVomitLevel = parseFloat($('input[name="nauseaOrVomitLevel"]:checked').val());
+        var coldSweatsLevel = parseFloat($('input[name="coldSweatsLevel"]:checked').val());
+        var indigestionOrHeartburnLevel = parseFloat($('input[name="indigestionOrHeartburnLevel"]:checked').val());
+        var painToArmLevel = parseFloat($('input[name="painToArmLevel"]:checked').val());
+        var jawPainLevel = parseFloat($('input[name="jawPainLevel"]:checked').val());
+        var backPainLevel = parseFloat($('input[name="backPainLevel"]:checked').val());
+        var faintingLevel = parseFloat($('input[name="faintingLevel"]:checked').val());
+        var persistentCoughLevel = parseFloat($('input[name="persistentCoughLevel"]:checked').val());
+        var difficultySleepingLevel = parseFloat($('input[name="difficultySleepingLevel"]:checked').val());
+        var suddenWeightGainLevel = parseFloat($('input[name="suddenWeightGainLevel"]:checked').val());
+        var rapidOrIrregularPulseLevel = parseFloat($('input[name="rapidOrIrregularPulseLevel"]:checked').val());
+        var extremeWeaknessLevel = parseFloat($('input[name="extremeWeaknessLevel"]:checked').val());
+        var lossOfConsciousnessLevel = parseFloat($('input[name="lossOfConsciousnessLevel"]:checked').val());
+        var blurredVisionLevel = parseFloat($('input[name="blurredVisionLevel"]:checked').val());
+        var legPainLevel = parseFloat($('input[name="legPainLevel"]:checked').val());
+        var numbnessInLimbsLevel = parseFloat($('input[name="numbnessInLimbsLevel"]:checked').val());
+        var coldLimbsLevel = parseFloat($('input[name="coldLimbsLevel"]:checked').val());
+        var cyanosisLevel = parseFloat($('input[name="cyanosisLevel"]:checked').val());
+        var poorGrowthInInfantsLevel = parseFloat($('input[name="poorGrowthInInfantsLevel"]:checked').val());
+        var recurrentRespiratoryInfectionsLevel = parseFloat($('input[name="recurrentRespiratoryInfectionsLevel"]:checked').val());
+        var sweatingLevel = parseFloat($('input[name="sweatingLevel"]:checked').val());
+        var confusionLevel = parseFloat($('input[name="confusionLevel"]:checked').val());
+        var numbnessOrWeaknessInLegsLevel = parseFloat($('input[name="numbnessOrWeaknessInLegsLevel"]:checked').val());
+        var coldnessInLowerLegOrFootLevel = parseFloat($('input[name="coldnessInLowerLegOrFootLevel"]:checked').val());
+        var soresOrWoundsOnLegsOrFeetLevel = parseFloat($('input[name="soresOrWoundsOnLegsOrFeetLevel"]:checked').val());
 
+        // Semptom verilerini bir objeye yerleştir
+        var symptomsData = {
+            smokeLevel: smokeLevel,
+            alcoholLevel: alcoholLevel,
+            headacheLevel: headacheLevel,
+            chestPainLevel: chestPainLevel,
+            shortnessOfBreathLevel: shortnessOfBreathLevel,
+            fatigueLevel: fatigueLevel,
+            feverLevel: feverLevel,
+            dizzinessLevel: dizzinessLevel,
+            swellingLevel: swellingLevel,
+            irregularHeartbeatLevel: irregularHeartbeatLevel,
+            nauseaOrVomitLevel: nauseaOrVomitLevel,
+            coldSweatsLevel: coldSweatsLevel,
+            indigestionOrHeartburnLevel: indigestionOrHeartburnLevel,
+            painToArmLevel: painToArmLevel,
+            jawPainLevel: jawPainLevel,
+            backPainLevel: backPainLevel,
+            faintingLevel: faintingLevel,
+            persistentCoughLevel: persistentCoughLevel,
+            difficultySleepingLevel: difficultySleepingLevel,
+            suddenWeightGainLevel: suddenWeightGainLevel,
+            rapidOrIrregularPulseLevel: rapidOrIrregularPulseLevel,
+            extremeWeaknessLevel: extremeWeaknessLevel,
+            lossOfConsciousnessLevel: lossOfConsciousnessLevel,
+            blurredVisionLevel: blurredVisionLevel,
+            legPainLevel: legPainLevel,
+            numbnessInLimbsLevel: numbnessInLimbsLevel,
+            coldLimbsLevel: coldLimbsLevel,
+            cyanosisLevel: cyanosisLevel,
+            poorGrowthInInfantsLevel: poorGrowthInInfantsLevel,
+            recurrentRespiratoryInfectionsLevel: recurrentRespiratoryInfectionsLevel,
+            sweatingLevel: sweatingLevel,
+            confusionLevel: confusionLevel,
+            numbnessOrWeaknessInLegsLevel: numbnessOrWeaknessInLegsLevel,
+            coldnessInLowerLegOrFootLevel: coldnessInLowerLegOrFootLevel,
+            soresOrWoundsOnLegsOrFeetLevel: soresOrWoundsOnLegsOrFeetLevel
+            // Diğer semptomlar buraya eklenebilir
+        };
 
-        // Semptom seviyelerini bir JSON string olarak bir gizli input alanına kaydet
-        var symptomLevelsInput = document.getElementById('symptomLevels');
-        if (!symptomLevelsInput) {
-            symptomLevelsInput = document.createElement('input');
-            symptomLevelsInput.type = 'hidden';
-            symptomLevelsInput.id = 'symptomLevels';
-            symptomLevelsInput.name = 'symptomLevels';
-            document.forms[0].appendChild(symptomLevelsInput);
-        }
-        symptomLevelsInput.value = JSON.stringify(symptomLevels);
+        // Semptom verilerini form verisine ekleyin
+        var symptomsInput = document.createElement('input');
+        symptomsInput.setAttribute('type', 'hidden');
+        symptomsInput.setAttribute('name', 'symptoms');
+        symptomsInput.setAttribute('value', JSON.stringify(symptomsData));
+        document.querySelector('form').appendChild(symptomsInput);
 
         // Modalı kapat
         $('#symptomModal').modal('hide');
+        $('body').removeClass('modal-open');
+        $('.modal-backdrop').remove();
     }
+
+    $(document).ready(function() {
+        $('form').on('submit', function(event) {
+            event.preventDefault(); // Formun varsayılan gönderme davranışını engelle
+            $('#form-container').hide(); // Formu gizle
+            $('#loading-animation').show(); // Yükleme animasyonunu göster
+
+            // Form verilerini al
+            var formData = new FormData(this);
+
+            // AJAX isteği ile form verilerini sunucuya gönder
+            $.ajax({
+                type: "POST",
+                url: "/submit", // Sunucunuzdaki form verilerini işleyecek olan URL
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    $('#loading-animation').hide(); // Yükleme animasyonunu gizle
+                    $('#success-message').show(); // Başarılı mesajını göster
+                },
+                error: function(xhr, status, error) {
+                    // Hata durumunda yapılacak işlemler
+                    console.error("Form gönderme işlemi başarısız: ", error);
+                    $('#loading-animation').hide(); // Yükleme animasyonunu gizle
+                    // Hata mesajını göstermek için bir yöntem ekleyin
+                }
+            });
+        });
+    });
+
 
 </script>
 
 {% endblock %}
 
 {% block content %}
+
 <div class="py-5">
     <h2 class="text-center">Patient Data Form</h2>
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <!-- Hasta veri formu -->
-            <form action="/submit" method="post" enctype="multipart/form-data">
-                <!-- İsim, yaş, kilo, boy, sigara, alkol, uyuşturucu, semptom, aile geçmişi, kan basıncı ve kan değerleri alanları -->
-                <div class="form-group">
-                    <label for="name">Name:</label>
-                    <input type="text" class="form-control" name="name" id="name" required>
-                </div>
-                <div class="form-group">
-                    <label for="age">Age:</label>
-                    <input type="number" class="form-control" name="age" id="age" required>
-                </div>
-                <div class="form-group">
-                    <label for="gender">Gender:</label>
-                    <select class="form-control" name="gender" id="gender" required>
-                        <option value="">Select Gender</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="weight">Weight (kg):</label>
-                    <input type="number" class="form-control" name="weight" id="weight" step="0.1" required>
-                </div>
-                <div class="form-group">
-                    <label for="height">Height (cm):</label>
-                    <input type="number" class="form-control" name="height" id="height" step="0.1" required>
-                </div>
-                <div class="form-group">
-                    <label for="bmi">BMI:</label>
-                    <input disabled type="number" class="form-control" name="bmi" id="bmi" step="0.1" required>
-                </div>
-                <div class="form-group">
-                    <label for="symptom">Symptoms:</label>
-                    <div class="form-row">
-                        <button type="button" class="newData" data-toggle="modal" data-target="#symptomModal" id="symptom">Select Symptoms</button>
+            <div id="form-container">
+                <!-- Hasta veri formu -->
+                <form action="/submit" method="post" enctype="multipart/form-data">
+                    <!-- İsim, yaş, kilo, boy, sigara, alkol, uyuşturucu, semptom, aile geçmişi, kan basıncı ve kan değerleri alanları -->
+                    <div class="form-group">
+                        <label for="name">Name:</label>
+                        <input type="text" class="form-control" name="name" id="name" required>
                     </div>
+                    <div class="form-group">
+                        <label for="age">Age:</label>
+                        <input type="number" class="form-control" name="age" id="age" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">Gender:</label>
+                        <select class="form-control" name="gender" id="gender" required>
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="weight">Weight (kg):</label>
+                        <input type="number" class="form-control" name="weight" id="weight" step="0.1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="height">Height (cm):</label>
+                        <input type="number" class="form-control" name="height" id="height" step="0.1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bmi">BMI:</label>
+                        <input disabled type="number" class="form-control" name="bmi" id="bmi" step="0.1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="symptomButton">Symptoms:</label>
+                        <div class="form-row">
+                        <button type="button" class="newData" data-toggle="modal" data-target="#symptomModal" id="symptomButton">Select Symptoms</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="familyHistory">Family History:</label>
+                        <input type="text" class="form-control" name="familyHistory" id="familyHistory">
+                    </div>
+                    <div class="form-group">
+                        <label for="bloodPressureMin">Blood Pressure Min:</label>
+                        <input type="text" class="form-control" name="bloodPressureMin" id="bloodPressureMin">
+                    </div>
+                    <div class="form-group">
+                        <label for="bloodPressureMax">Blood Pressure Max:</label>
+                        <input type="text" class="form-control" name="bloodPressureMax" id="bloodPressureMax">
+                    </div>
+                    <div class="form-group">
+                        <label for="bloodValues">Blood Values (Excel):</label>
+                        <input type="file" class="form-control-file" name="bloodValues" id="bloodValues" accept=".xlsx">
+                    </div>
+                    <button type="submit" class="newData">Submit</button>
+                </form>
+            </div>
+           <!-- Başarılı mesajı -->
+            <div id="success-message" class="alert alert-success" role="alert" style="display: none;">
+                Patient Data Created Successfully!
+            </div>
+
+            <!-- Yükleme animasyonu -->
+            <div id="loading-animation" class="text-center" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
                 </div>
-                <div class="form-group">
-                    <label for="familyHistory">Family History:</label>
-                    <input type="text" class="form-control" name="familyHistory" id="familyHistory">
-                </div>
-                <div class="form-group">
-                    <label for="bloodPressureMin">Blood Pressure Min:</label>
-                    <input type="text" class="form-control" name="bloodPressureMin" id="bloodPressureMin">
-                </div>
-                <div class="form-group">
-                    <label for="bloodPressureMax">Blood Pressure Max:</label>
-                    <input type="text" class="form-control" name="bloodPressureMax" id="bloodPressureMax">
-                </div>
-                <div class="form-group">
-                    <label for="bloodValues">Blood Values (Excel):</label>
-                    <input type="file" class="form-control-file" name="bloodValues" id="bloodValues" accept=".xlsx">
-                </div>
-                <button type="submit" class="newData">Submit</button>
-            </form>
+            </div>
         </div>
     </div>
 </div>
+
 
 <!-- Semptomlar için modal -->
 <div class="modal fade" id="symptomModal" tabindex="-1" role="dialog" aria-labelledby="symptomModalLabel" aria-hidden="true">
@@ -222,16 +329,16 @@
         <div class="form-group">
           <label for="smokeLevel">Smoke Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="smokeLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="smokeLevel0" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="smokeLevel" id="smokeLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="smokeLevel1" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="smokeLevel" id="smokeLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="smokeLevel2" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="smokeLevel" id="smokeLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
+            <label for="smokeLevel3" class="btn btn-secondary">
                 <input type="radio" name="smokeLevel" id="smokeLevel3" value="1"> High
             </label>
           </div>
@@ -240,53 +347,53 @@
         <div class="form-group">
           <label for="alcoholLevel">Alcohol Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="alcoholLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="alcoholLevel0" value="0"> Never
+            <label for="alcoholLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="alcoholLevel" id="alcoholLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="alcoholLevel1" value="0.25"> Low
+            <label for="alcoholLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="alcoholLevel" id="alcoholLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="alcoholLevel2" value="0.50"> Medium
+            <label for="alcoholLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="alcoholLevel" id="alcoholLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="alcoholLevel3" value="1"> High
+            <label for="alcoholLevel3" class="btn btn-secondary">
+                <input type="radio" name="alcoholLevel" id="alcoholLevel3" value="1"> High
             </label>
           </div>
         </div>
 
         <div class="form-group">
-          <label for="headacheLevel">Headache Level:</label>
-          <div class="btn-group btn-group-toggle" data-toggle="buttons" id="headacheLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="headacheLevel0" value="0"> Never
-            </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="headacheLevel1" value="0.25"> Low
-            </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="headacheLevel2" value="0.50"> Medium
-            </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="headacheLevel3" value="1"> High
-            </label>
-          </div>
+            <label for="headacheLevel">Headache Level:</label>
+            <div class="btn-group btn-group-toggle" data-toggle="buttons" id="headacheLevel">
+                <label for="headacheLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                    <input type="radio" name="headacheLevel" id="headacheLevel0" value="0"> Never
+                </label>
+                <label for="headacheLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                    <input type="radio" name="headacheLevel" id="headacheLevel1" value="0.25"> Low
+                </label>
+                <label for="headacheLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                    <input type="radio" name="headacheLevel" id="headacheLevel2" value="0.50"> Medium
+                </label>
+                <label for="headacheLevel3" class="btn btn-secondary">
+                    <input type="radio" name="headacheLevel" id="headacheLevel3" value="1"> High
+                </label>
+            </div>
         </div>
 
         <div class="form-group">
           <label for="chestPainLevel">Chest Pain Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="chestPainLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="chestPainLevel0" value="0"> Never
+            <label for="chestPainLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="chestPainLevel" id="chestPainLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="chestPainLevel1" value="0.25"> Low
+            <label for="chestPainLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="chestPainLevel" id="chestPainLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="chestPainLevel2" value="0.50"> Medium
+            <label for="chestPainLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="chestPainLevel" id="chestPainLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="chestPainLevel3" value="1"> High
+            <label for="chestPainLevel3" class="btn btn-secondary">
+                <input type="radio" name="chestPainLevel" id="chestPainLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -294,17 +401,17 @@
         <div class="form-group">
           <label for="shortnessOfBreathLevel">Shortness Of Breath Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="shortnessOfBreathLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="shortnessOfBreathLevel0" value="0"> Never
+            <label for="shortnessOfBreathLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="shortnessOfBreathLevel" id="shortnessOfBreathLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="shortnessOfBreathLevel1" value="0.25"> Low
+            <label for="shortnessOfBreathLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="shortnessOfBreathLevel" id="shortnessOfBreathLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="shortnessOfBreathLevel2" value="0.50"> Medium
+            <label for="shortnessOfBreathLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="shortnessOfBreathLevel" id="shortnessOfBreathLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="shortnessOfBreathLevel3" value="1"> High
+            <label for="shortnessOfBreathLevel3" class="btn btn-secondary">
+                <input type="radio" name="shortnessOfBreathLevel" id="shortnessOfBreathLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -312,17 +419,17 @@
         <div class="form-group">
           <label for="fatigueLevel">Fatigue Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="fatigueLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="fatigueLevel0" value="0"> Never
+            <label for="fatigueLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="fatigueLevel" id="fatigueLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="fatigueLevel1" value="0.25"> Low
+            <label for="fatigueLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="fatigueLevel" id="fatigueLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="fatigueLevel2" value="0.50"> Medium
+            <label for="fatigueLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="fatigueLevel" id="fatigueLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="fatigueLevel3" value="1"> High
+            <label for="fatigueLevel3" class="btn btn-secondary">
+                <input type="radio" name="fatigueLevel" id="fatigueLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -330,17 +437,17 @@
         <div class="form-group">
           <label for="feverLevel">Fever Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="feverLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="feverLevel0" value="0"> Never
+            <label for="feverLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="feverLevel" id="feverLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="feverLevel1" value="0.25"> Low
+            <label for="feverLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="feverLevel" id="feverLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="feverLevel2" value="0.50"> Medium
+            <label for="feverLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="feverLevel" id="feverLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="feverLevel3" value="1"> High
+            <label for="feverLevel3" class="btn btn-secondary">
+                <input type="radio" name="feverLevel" id="feverLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -348,17 +455,17 @@
         <div class="form-group">
           <label for="dizzinessLevel">Dizziness Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="dizzinessLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="dizzinessLevel0" value="0"> Never
+            <label for="dizzinessLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="dizzinessLevel" id="dizzinessLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="dizzinessLevel1" value="0.25"> Low
+            <label for="dizzinessLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="dizzinessLevel" id="dizzinessLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="dizzinessLevel2" value="0.50"> Medium
+            <label for="dizzinessLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="dizzinessLevel" id="dizzinessLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="dizinessLevel3" value="1"> High
+            <label for="dizzinessLevel3" class="btn btn-secondary">
+                <input type="radio" name="dizzinessLevel" id="dizzinessLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -366,17 +473,17 @@
         <div class="form-group">
           <label for="palpitationLevel">Swelling Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="palpitationLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="palpitationLevel0" value="0"> Never
+            <label for="palpitationLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="palpitationLevel" id="palpitationLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="palpitationLevel1" value="0.25"> Low
+            <label for="palpitationLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="palpitationLevel" id="palpitationLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="palpitationLevel2" value="0.50"> Medium
+            <label for="palpitationLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="palpitationLevel" id="palpitationLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="palpitationLevel3" value="1"> High
+            <label for="palpitationLevel3" class="btn btn-secondary">
+                <input type="radio" name="palpitationLevel" id="palpitationLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -384,17 +491,17 @@
         <div class="form-group">
           <label for="swellingLevel">Swelling Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="swellingLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="swellingLevel0" value="0"> Never
+            <label for="swellingLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="swellingLevel" id="swellingLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="swellingLevel1" value="0.25"> Low
+            <label for="swellingLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="swellingLevel" id="swellingLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="swellingLevel2" value="0.50"> Medium
+            <label for="swellingLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="swellingLevel" id="swellingLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="swellingLevel3" value="1"> High
+            <label for="swellingLevel3" class="btn btn-secondary">
+                <input type="radio" name="swellingLevel" id="swellingLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -402,17 +509,17 @@
         <div class="form-group">
           <label for="irregularHeartbeatLevel">Irregular Heartbeat Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="irregularHeartbeatLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="irregularHeartbeatLevel0" value="0"> Never
+            <label for="irregularHeartbeatLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="irregularHeartbeatLevel" id="irregularHeartbeatLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="irregularHeartbeatLevel1" value="0.25"> Low
+            <label for="irregularHeartbeatLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="irregularHeartbeatLevel" id="irregularHeartbeatLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="irregularHeartbeatLevel2" value="0.50"> Medium
+            <label for="irregularHeartbeatLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="irregularHeartbeatLevel" id="irregularHeartbeatLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="irregularHeartbeatLevel3" value="1"> High
+            <label for="irregularHeartbeatLevel3" class="btn btn-secondary">
+                <input type="radio" name="irregularHeartbeatLevel" id="irregularHeartbeatLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -420,17 +527,17 @@
         <div class="form-group">
           <label for="nauseaOrVomitLevel">Nausea or Vomit Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="nauseaOrVomitLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="nauseaOrVomitLevel0" value="0"> Never
+            <label for="nauseaOrVomitLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="nauseaOrVomitLevel" id="nauseaOrVomitLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="nauseaOrVomitLevel1" value="0.25"> Low
+            <label for="nauseaOrVomitLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="nauseaOrVomitLevel" id="nauseaOrVomitLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="nauseaOrVomitLevel2" value="0.50"> Medium
+            <label for="nauseaOrVomitLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="nauseaOrVomitLevel" id="nauseaOrVomitLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="nauseaOrVomitLevel3" value="1"> High
+            <label for="nauseaOrVomitLevel3" class="btn btn-secondary">
+                <input type="radio" name="nauseaOrVomitLevel" id="nauseaOrVomitLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -438,17 +545,17 @@
         <div class="form-group">
           <label for="coldSweatsLevel">Cold Sweats Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="coldSweatsLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="coldSweatsLevel0" value="0"> Never
+            <label for="coldSweatsLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="coldSweatsLevel" id="coldSweatsLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="coldSweatsLevel1" value="0.25"> Low
+            <label for="coldSweatsLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="coldSweatsLevel" id="coldSweatsLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="coldSweatsLevel2" value="0.50"> Medium
+            <label for="coldSweatsLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="coldSweatsLevel" id="coldSweatsLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="coldSweatsLevel3" value="1"> High
+            <label for="coldSweatsLevel3" class="btn btn-secondary">
+                <input type="radio" name="coldSweatsLevel" id="coldSweatsLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -456,17 +563,17 @@
         <div class="form-group">
           <label for="indigestionOrHeartburnLevel">Indigestion or Heartburn Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="indigestionOrHeartburnLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="indigestionOrHeartburnLevel0" value="0"> Never
+            <label for="indigestionOrHeartburnLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="indigestionOrHeartburnLevel" id="indigestionOrHeartburnLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="indigestionOrHeartburnLevel1" value="0.25"> Low
+            <label for="indigestionOrHeartburnLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="indigestionOrHeartburnLevel" id="indigestionOrHeartburnLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="indigestionOrHeartburnLevel2" value="0.50"> Medium
+            <label for="indigestionOrHeartburnLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="indigestionOrHeartburnLevel" id="indigestionOrHeartburnLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="indigestionOrHeartburnLevel3" value="1"> High
+            <label for="indigestionOrHeartburnLevel3" class="btn btn-secondary">
+                <input type="radio" name="indigestionOrHeartburnLevel" id="indigestionOrHeartburnLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -474,17 +581,17 @@
         <div class="form-group">
           <label for="painToArmLevel">Pain Spreads to Arm Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="painToArmLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="painToArmLevel0" value="0"> Never
+            <label for="painToArmLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="painToArmLevel" id="painToArmLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="painToArmLevel1" value="0.25"> Low
+            <label for="painToArmLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="painToArmLevel" id="painToArmLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="painToArmLevel2" value="0.50"> Medium
+            <label for="painToArmLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="painToArmLevel" id="painToArmLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="painToArmLevel3" value="1"> High
+            <label for="painToArmLevel3" class="btn btn-secondary">
+                <input type="radio" name="painToArmLevel" id="painToArmLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -492,17 +599,17 @@
         <div class="form-group">
           <label for="jawPainLevel">Jaw Pain Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="jawPainLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="jawPainLevel0" value="0"> Never
+            <label for="jawPainLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="jawPainLevel" id="jawPainLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="jawPainLevel1" value="0.25"> Low
+            <label for="jawPainLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="jawPainLevel" id="jawPainLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="jawPainLevel2" value="0.50"> Medium
+            <label for="jawPainLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="jawPainLevel" id="jawPainLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="jawPainLevel3" value="1"> High
+            <label for="jawPainLevel3" class="btn btn-secondary">
+                <input type="radio" name="jawPainLevel" id="jawPainLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -510,17 +617,17 @@
         <div class="form-group">
           <label for="backPainLevel">Back Pain Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="backPainLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="backPainLevel0" value="0"> Never
+            <label for="backPainLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="backPainLevel" id="backPainLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="backPainLevel1" value="0.25"> Low
+            <label for="backPainLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="backPainLevel" id="backPainLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="backPainLevel2" value="0.50"> Medium
+            <label for="backPainLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="backPainLevel" id="backPainLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="backPainLevel3" value="1"> High
+            <label for="backPainLevel3" class="btn btn-secondary">
+                <input type="radio" name="backPainLevel" id="backPainLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -528,17 +635,17 @@
         <div class="form-group">
           <label for="faintingLevel">Fainting Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="faintingLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="faintingLevel0" value="0"> Never
+            <label for="faintingLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="faintingLevel" id="faintingLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="faintingLevel1" value="0.25"> Low
+            <label for="faintingLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="faintingLevel" id="faintingLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="faintingLevel2" value="0.50"> Medium
+            <label for="faintingLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="faintingLevel" id="faintingLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="faintingLevel3" value="1"> High
+            <label for="faintingLevel3" class="btn btn-secondary">
+                <input type="radio" name="faintingLevel" id="faintingLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -546,17 +653,17 @@
         <div class="form-group">
           <label for="persistentCoughLevel">Persistent Cough Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="persistentCoughLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="persistentCoughLevel0" value="0"> Never
+            <label for="persistentCoughLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="persistentCoughLevel" id="persistentCoughLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="persistentCoughLevel1" value="0.25"> Low
+            <label for="persistentCoughLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="persistentCoughLevel" id="persistentCoughLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="persistentCoughLevel2" value="0.50"> Medium
+            <label for="persistentCoughLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="persistentCoughLevel" id="persistentCoughLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="persistentCoughLevel3" value="1"> High
+            <label for="persistentCoughLevel3" class="btn btn-secondary">
+                <input type="radio" name="persistentCoughLevel" id="persistentCoughLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -564,17 +671,17 @@
         <div class="form-group">
           <label for="difficultySleepingLevel">Difficulty Sleeping Lying Flat Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="difficultySleepingLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="difficultySleepingLevel0" value="0"> Never
+            <label for="difficultySleepingLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="difficultySleepingLevel" id="difficultySleepingLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="difficultySleepingLevel1" value="0.25"> Low
+            <label for="difficultySleepingLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="difficultySleepingLevel" id="difficultySleepingLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="smokeLevel" id="difficultySleepingLevel2" value="0.50"> Medium
+            <label for="difficultySleepingLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="difficultySleepingLevel" id="difficultySleepingLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="smokeLevel" id="difficultySleepingLevel3" value="1"> High
+            <label for="difficultySleepingLevel3" class="btn btn-secondary">
+                <input type="radio" name="difficultySleepingLevel" id="difficultySleepingLevel3" value="1"> High
             </label>
           </div>
         </div>
@@ -582,16 +689,16 @@
         <div class="form-group">
           <label for="suddenWeightGainLevel">Sudden Weight Gain Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="suddenWeightGainLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="suddenWeightGainLevel0" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="suddenWeightGainLevel" id="suddenWeightGainLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="suddenWeightGainLevel1" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="suddenWeightGainLevel" id="suddenWeightGainLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="suddenWeightGainLevel2" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="suddenWeightGainLevel" id="suddenWeightGainLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
+            <label for="suddenWeightGainLevel3" class="btn btn-secondary">
                 <input type="radio" name="suddenWeightGainLevel" id="suddenWeightGainLevel3" value="1"> High
             </label>
           </div>
@@ -600,16 +707,16 @@
         <div class="form-group">
           <label for="rapidOrIrregularPulseLevel">Rapid or Irregular Pulse Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="rapidOrIrregularPulseLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="rapidOrIrregularPulseLevel0" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="rapidOrIrregularPulseLevel" id="rapidOrIrregularPulseLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="rapidOrIrregularPulseLevel1" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="rapidOrIrregularPulseLevel" id="rapidOrIrregularPulseLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="rapidOrIrregularPulseLevel2" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="rapidOrIrregularPulseLevel" id="rapidOrIrregularPulseLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
+            <label for="rapidOrIrregularPulseLevel3" class="btn btn-secondary">
                 <input type="radio" name="rapidOrIrregularPulseLevel" id="rapidOrIrregularPulseLevel3" value="1"> High
             </label>
           </div>
@@ -618,16 +725,16 @@
         <div class="form-group">
           <label for="extremeWeaknessLevel">Extreme Weakness Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="extremeWeaknessLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="extremeWeaknessLevel0" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="extremeWeaknessLevel" id="extremeWeaknessLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="extremeWeaknessLevel1" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="extremeWeaknessLevel" id="extremeWeaknessLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="extremeWeaknessLevel2" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="extremeWeaknessLevel" id="extremeWeaknessLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
+            <label for="extremeWeaknessLevel3" class="btn btn-secondary">
                 <input type="radio" name="extremeWeaknessLevel" id="extremeWeaknessLevel3" value="1"> High
             </label>
           </div>
@@ -636,16 +743,16 @@
         <div class="form-group">
           <label for="lossOfConsciousnessLevel">Loss of Consciousness Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="lossOfConsciousnessLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="lossOfConsciousnessLevel0" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="lossOfConsciousnessLevel" id="lossOfConsciousnessLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="lossOfConsciousnessLevel1" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="lossOfConsciousnessLevel" id="lossOfConsciousnessLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="lossOfConsciousnessLevel2" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="lossOfConsciousnessLevel" id="lossOfConsciousnessLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
+            <label for="lossOfConsciousnessLevel3" class="btn btn-secondary">
                 <input type="radio" name="lossOfConsciousnessLevel" id="lossOfConsciousnessLevel3" value="1"> High
             </label>
           </div>
@@ -654,16 +761,16 @@
         <div class="form-group">
           <label for="blurredVisionLevel">Blurred Vision Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="blurredVisionLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="blurredVisionLevel0" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="blurredVisionLevel" id="blurredVisionLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="blurredVisionLevel1" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="blurredVisionLevel" id="blurredVisionLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="blurredVisionLevel2" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="blurredVisionLevel" id="blurredVisionLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
+            <label for="blurredVisionLevel3" class="btn btn-secondary">
                 <input type="radio" name="blurredVisionLevel" id="blurredVisionLevel3" value="1"> High
             </label>
           </div>
@@ -672,16 +779,16 @@
         <div class="form-group">
           <label for="legPainLevel">Blurred Vision Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="legPainLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="legPainLevel0" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="blurredVisionLevel" id="legPainLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="legPainLevel1" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="blurredVisionLevel" id="legPainLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="legPainLevel2" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="blurredVisionLevel" id="legPainLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
+            <label for="legPainLevel3" class="btn btn-secondary">
                 <input type="radio" name="blurredVisionLevel" id="legPainLevel3" value="1"> High
             </label>
           </div>
@@ -690,16 +797,16 @@
         <div class="form-group">
           <label for="numbnessInLimbsLevel">Numbness in Limbs Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="numbnessInLimbsLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="numbnessInLimbsLevel0" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="numbnessInLimbsLevel" id="numbnessInLimbsLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="numbnessInLimbsLevel1" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="numbnessInLimbsLevel" id="numbnessInLimbsLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="numbnessInLimbsLevel2" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="numbnessInLimbsLevel" id="numbnessInLimbsLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
+            <label for="numbnessInLimbsLevel3" class="btn btn-secondary">
                 <input type="radio" name="numbnessInLimbsLevel" id="numbnessInLimbsLevel3" value="1"> High
             </label>
           </div>
@@ -708,16 +815,16 @@
         <div class="form-group">
           <label for="coldLimbsLevel">Cold Limbs Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="coldLimbsLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="coldLimbsLevel0" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="coldLimbsLevel" id="coldLimbsLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="coldLimbsLevel1" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="coldLimbsLevel" id="coldLimbsLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="coldLimbsLevel2" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="coldLimbsLevel" id="coldLimbsLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
+            <label for="coldLimbsLevel3" class="btn btn-secondary">
                 <input type="radio" name="coldLimbsLevel" id="coldLimbsLevel3" value="1"> High
             </label>
           </div>
@@ -726,16 +833,16 @@
         <div class="form-group">
           <label for="cyanosisLevel">Cyanosis Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="cyanosisLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="cyanosisLevel0" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="cyanosisLevel" id="cyanosisLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="cyanosisLevel1" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="cyanosisLevel" id="cyanosisLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="cyanosisLevel2" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="cyanosisLevel" id="cyanosisLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
+            <label for="cyanosisLevel3" class="btn btn-secondary">
                 <input type="radio" name="cyanosisLevel" id="cyanosisLevel3" value="1"> High
             </label>
           </div>
@@ -744,16 +851,16 @@
         <div class="form-group">
           <label for="poorGrowthInInfantsLevel">Poor Growth in Infants Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="poorGrowthInInfantsLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="poorGrowthInInfantsLevel0" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="poorGrowthInInfantsLevel" id="poorGrowthInInfantsLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="poorGrowthInInfantsLevel1" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="poorGrowthInInfantsLevel" id="poorGrowthInInfantsLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="poorGrowthInInfantsLevel2" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="poorGrowthInInfantsLevel" id="poorGrowthInInfantsLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
+            <label for="poorGrowthInInfantsLevel3" class="btn btn-secondary">
                 <input type="radio" name="poorGrowthInInfantsLevel" id="poorGrowthInInfantsLevel3" value="1"> High
             </label>
           </div>
@@ -762,16 +869,16 @@
         <div class="form-group">
           <label for="recurrentRespiratoryInfectionsLevel">Recurrent Respiratory Infections Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="recurrentRespiratoryInfectionsLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="recurrentRespiratoryInfectionsLevel0" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="recurrentRespiratoryInfectionsLevel" id="recurrentRespiratoryInfectionsLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="recurrentRespiratoryInfectionsLevel1" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="recurrentRespiratoryInfectionsLevel" id="recurrentRespiratoryInfectionsLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="recurrentRespiratoryInfectionsLevel2" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="recurrentRespiratoryInfectionsLevel" id="recurrentRespiratoryInfectionsLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
+            <label for="recurrentRespiratoryInfectionsLevel3" class="btn btn-secondary">
                 <input type="radio" name="recurrentRespiratoryInfectionsLevel" id="recurrentRespiratoryInfectionsLevel3" value="1"> High
             </label>
           </div>
@@ -780,16 +887,16 @@
         <div class="form-group">
           <label for="sweatingLevel">Sweating Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="sweatingLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="sweatingLevel0" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="sweatingLevel" id="sweatingLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="sweatingLevel1" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="sweatingLevel" id="sweatingLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="sweatingLevel2" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="sweatingLevel" id="sweatingLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
+            <label for="sweatingLevel3" class="btn btn-secondary">
                 <input type="radio" name="sweatingLevel" id="sweatingLevel3" value="1"> High
             </label>
           </div>
@@ -798,16 +905,16 @@
         <div class="form-group">
           <label for="confusionLevel">Confusion Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="confusionLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="confusionLevel0" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="confusionLevel" id="confusionLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="confusionLevel1" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="confusionLevel" id="confusionLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="confusionLevel2" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="confusionLevel" id="confusionLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
+            <label for="confusionLevel3" class="btn btn-secondary">
                 <input type="radio" name="confusionLevel" id="confusionLevel3" value="1"> High
             </label>
           </div>
@@ -816,16 +923,16 @@
         <div class="form-group">
           <label for="numbnessOrWeaknessInLegsLevel">Numbness or Weakness in Legs Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="numbnessOrWeaknessInLegsLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="numbnessOrWeaknessInLegsLevel0" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="numbnessOrWeaknessInLegsLevel" id="numbnessOrWeaknessInLegsLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="numbnessOrWeaknessInLegsLevel1" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="numbnessOrWeaknessInLegsLevel" id="numbnessOrWeaknessInLegsLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="numbnessOrWeaknessInLegsLevel2" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="numbnessOrWeaknessInLegsLevel" id="numbnessOrWeaknessInLegsLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
+            <label for="numbnessOrWeaknessInLegsLevel3" class="btn btn-secondary">
                 <input type="radio" name="numbnessOrWeaknessInLegsLevel" id="numbnessOrWeaknessInLegsLevel3" value="1"> High
             </label>
           </div>
@@ -834,16 +941,16 @@
         <div class="form-group">
           <label for="coldnessInLowerLegOrFootLevel">Coldness in Lower Leg or Foot Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="coldnessInLowerLegOrFootLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="coldnessInLowerLegOrFootLevel0" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="coldnessInLowerLegOrFootLevel" id="coldnessInLowerLegOrFootLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="coldnessInLowerLegOrFootLevel1" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="coldnessInLowerLegOrFootLevel" id="coldnessInLowerLegOrFootLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
+            <label for="coldnessInLowerLegOrFootLevel2" class="btn btn-secondary" style="margin-right:5px;">
                 <input type="radio" name="coldnessInLowerLegOrFootLevel" id="coldnessInLowerLegOrFootLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
+            <label for="coldnessInLowerLegOrFootLevel3" class="btn btn-secondary">
                 <input type="radio" name="coldnessInLowerLegOrFootLevel" id="coldnessInLowerLegOrFootLevel3" value="1"> High
             </label>
           </div>
@@ -852,26 +959,25 @@
         <div class="form-group">
           <label for="soresOrWoundsOnLegsOrFeetLevel">Sores or Wounds on Legs or Feet Level:</label>
           <div class="btn-group btn-group-toggle" data-toggle="buttons" id="soresOrWoundsOnLegsOrFeetLevel">
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="coldnessInLowerLegOrFootLevel" id="soresOrWoundsOnLegsOrFeetLevel0" value="0"> Never
+            <label for="soresOrWoundsOnLegsOrFeetLevel0" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="soresOrWoundsOnLegsOrFeetLevel" id="soresOrWoundsOnLegsOrFeetLevel0" value="0"> Never
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="coldnessInLowerLegOrFootLevel" id="soresOrWoundsOnLegsOrFeetLevel1" value="0.25"> Low
+            <label for="soresOrWoundsOnLegsOrFeetLevel1" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="soresOrWoundsOnLegsOrFeetLevel" id="soresOrWoundsOnLegsOrFeetLevel1" value="0.25"> Low
             </label>
-            <label class="btn btn-secondary" style="margin-right:5px;">
-                <input type="radio" name="coldnessInLowerLegOrFootLevel" id="soresOrWoundsOnLegsOrFeetLevel2" value="0.50"> Medium
+            <label for="soresOrWoundsOnLegsOrFeetLevel2" class="btn btn-secondary" style="margin-right:5px;">
+                <input type="radio" name="soresOrWoundsOnLegsOrFeetLevel" id="soresOrWoundsOnLegsOrFeetLevel2" value="0.50"> Medium
             </label>
-            <label class="btn btn-secondary">
-                <input type="radio" name="coldnessInLowerLegOrFootLevel" id="soresOrWoundsOnLegsOrFeetLevel3" value="1"> High
+            <label for="soresOrWoundsOnLegsOrFeetLevel3" class="btn btn-secondary">
+                <input type="radio" name="soresOrWoundsOnLegsOrFeetLevel" id="soresOrWoundsOnLegsOrFeetLevel3" value="1"> High
             </label>
           </div>
         </div>
-
         <!-- Diğer semptomlar için benzer seçenekler eklenebilir -->
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="button" class="newData">Save changes</button>
+        <button type="button" class="newData" onclick="saveSymptoms()">Save Changes</button>
       </div>
     </div>
   </div>
