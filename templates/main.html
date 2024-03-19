@@ -63,6 +63,34 @@
         display: inline-block; /* Etiketleri blok olarak ayarla */
     }
 
+    .file-upload-btn {
+        border-radius: 10px;
+        padding: 6px 12px;
+        color: white;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease-in-out;
+        font-size: 14px;
+        background-color: #31304D;
+        text-align: center;
+    }
+
+    .file-upload-btn:hover {
+        background-color: #B6BBC4;
+        transform: scale(1.1);
+    }
+
+    .file-upload-btn:active {
+         background-color: #161A30;
+         transform: scale(0.9);
+    }
+
+    #file-chosen {
+        margin-left: 10px;
+        font-style: italic;
+    }
+
     #success-message {
         margin-top: 20px;
         text-align: center;
@@ -201,6 +229,11 @@
     }
 
     $(document).ready(function() {
+        $('#bloodValues').on('change', function() {
+            var fileName = $(this).val().split('\\').pop(); // Dosya adını al
+            $('#file-chosen').text(fileName); // Seçilen dosya adını güncelle
+        });
+
         $('form').on('submit', function(event) {
             event.preventDefault(); // Formun varsayılan gönderme davranışını engelle
             $('#form-container').hide(); // Formu gizle
@@ -292,8 +325,9 @@
                         <input type="text" class="form-control" name="bloodPressureMax" id="bloodPressureMax">
                     </div>
                     <div class="form-group">
-                        <label for="bloodValues">Blood Values (Excel):</label>
-                        <input type="file" class="form-control-file" name="bloodValues" id="bloodValues" accept=".xlsx">
+                        <label for="bloodValues" class="file-upload-btn">Choose File</label>
+                        <input type="file" class="form-control-file" name="bloodValues" id="bloodValues" accept=".xlsx" style="display: none;">
+                        <span id="file-chosen">No File Chosen</span>
                     </div>
                     <button type="submit" class="newData">Submit</button>
                 </form>

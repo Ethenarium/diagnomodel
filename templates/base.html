@@ -9,12 +9,47 @@
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <style type="text/css">
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .navbar {
+           background: rgb(167,246,255);
+           background: linear-gradient(90deg, rgba(167,246,255,1) 0%, rgba(227,248,255,0) 44%, rgba(204,204,204,1) 100%);
+        }
+
+         .navbar-nav .nav-link {
+            transition: color 0.3s, text-decoration 0.3s;
+        }
+
+        .navbar-nav .nav-link:hover {
+            color: #007BFF !important; /* Yazının üzerine gelindiğinde mavi olur */
+            text-decoration: !important; /* Altı çizili olur */
+            transform: scale(1.1);
+        }
+
+        .navbar-nav .nav-link:active {
+            color: #DC3545 !important; /* Yazıya tıklandığında kırmızı olur */
+            transform: scale(0.9);
+        }
+    </style>
     {% block head %}{% endblock %}
 </head>
 <body>
     <!-- Navigasyon çubuğu -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="#">Health App</a>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light" style="height: 60px;">
+        <a class="navbar-brand" href="#">
+            <img src="{{ url_for('static', filename='logoHealth.png') }}" alt="Health App Logo" height="50">
+        </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
