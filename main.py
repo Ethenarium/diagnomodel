@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import functools
 import os
-from flask import Flask, redirect, render_template, request, session, url_for, jsonify
+from flask import Flask, redirect, render_template, request, session, url_for, jsonify, current_app
 from werkzeug.utils import secure_filename  # secure_filename için eklendi
 import pymongo
 from decouple import config
@@ -10,19 +10,148 @@ import matplotlib.pyplot as plt
 import pandas as pd  # pandas için eklendi
 from bson.objectid import ObjectId
 import json
+import joblib
 
 app = Flask('app')  # Flask uygulaması oluşturur
 app.secret_key = config('secret')  # Flask uygulamasının gizli anahtarını .env dosyasından ayarlar
 my_client = pymongo.MongoClient(config('mongo_url'))  # MongoDB istemcisini .env dosyasındaki URL ile başlatır
 my_db = my_client[config('db_name')]  # MongoDB veritabanını .env dosyasındaki isimle seçer
+model = joblib.load('logistic_regression_model.pkl')
 
 if not os.path.exists('uploads'):  # Eğer 'uploads' klasörü mevcut değilse,
     os.makedirs('uploads')  # 'uploads' klasörünü oluşturur
 
-
 def get_sequence(seq_name):  # Veritabanında belirli bir sayaç için sıra numarası alır veya oluşturur
     return my_db.counters.find_one_and_update(filter={"_id": seq_name}, update={"$inc": {"seq": 1}}, upsert=True)["seq"]
 
+def get_patient_data(patient_id):
+    patient_record = my_db.patientData.find_one({"_id": ObjectId(patient_id)})
+    return patient_record
+
+def prepare_patient_data(patient_data):
+
+    feature_names = [
+        "Age", "BMI", "Smoker", "Drinker", "Headache", "Fatigue", "ChestPain",
+        "ShortnessOfBreath", "Dizziness", "Palpitations", "Swelling", "IrregularHeartbeat",
+        "Nausea", "ColdSweats", "Indigestion", "PainArm", "JawPain", "BackPain",
+        "Fainting", "PersistentCough", "DifficultySleeping", "SuddenWeightGain",
+        "RapidPulse", "ExtremeWeakness", "LossOfConsciousness", "BlurredVision",
+        "LegPain", "NumbnessInLimbs", "ColdLimbs", "Cyanosis", "PoorGrowthInInfants",
+        "RecurrentRespiratoryInfections", "Sweating", "Confusion", "NumbnessOrWeaknessInLegs",
+        "ColdnessInLowerLegOrFoot", "SoresOrWoundsOnToesFeetOrLegs"
+    ]
+
+    features = [
+        patient_data['age'],
+        patient_data['bmi'],
+        patient_data['symptoms'].get('smoker', 0),
+        patient_data['symptoms'].get('drinker', 0),
+        patient_data['symptoms'].get('headache', 0),
+        patient_data['symptoms'].get('chestPain', 0),
+        patient_data['symptoms'].get('shortnessOfBreath', 0.5),
+        patient_data['symptoms'].get('fatigue', 0),
+        patient_data['symptoms'].get('fever', 0),
+        patient_data['symptoms'].get('dizziness', 0),
+        patient_data['symptoms'].get('swelling', 0),
+        patient_data['symptoms'].get('irregularHeartbeat', 0),
+        patient_data['symptoms'].get('nauseaOrVomit', 0),
+        patient_data['symptoms'].get('coldSweats', 0),
+        patient_data['symptoms'].get('indigestionOrHeartburn', 0),
+        patient_data['symptoms'].get('painToArm', 0),
+        patient_data['symptoms'].get('jawPain', 0),
+        patient_data['symptoms'].get('backPain', 0),
+        patient_data['symptoms'].get('fainting', 0),
+        patient_data['symptoms'].get('persistentCough', 0),
+        patient_data['symptoms'].get('difficultySleeping', 0),
+        patient_data['symptoms'].get('suddenWeightGain', 0),
+        patient_data['symptoms'].get('rapidOrIrregularPulse', 0),
+        patient_data['symptoms'].get('extremeWeakness', 0),
+        patient_data['symptoms'].get('lossOfConsciousness', 0),
+        patient_data['symptoms'].get('blurredVision', 0),
+        patient_data['symptoms'].get('legPain', 0),
+        patient_data['symptoms'].get('numbnessInLimbs', 0),
+        patient_data['symptoms'].get('coldLimbs', 0),
+        patient_data['symptoms'].get('cyanosis', 0),
+        patient_data['symptoms'].get('poorGrowthInInfants', 0),
+        patient_data['symptoms'].get('recurrentRespiratoryInfections', 0),
+        patient_data['symptoms'].get('sweating', 0),
+        patient_data['symptoms'].get('confusion', 0),
+        patient_data['symptoms'].get('numbnessOrWeaknessInLegs', 0),
+        patient_data['symptoms'].get('coldnessInLowerLegOrFoot', 0),
+        patient_data['symptoms'].get('soresOrWoundsOnLegsOrFeet', 0)
+    ]
+
+    features_df = pd.DataFrame([features], columns=feature_names)
+    return features_df
+def get_diagnosis_name(diagnosis_id):
+    diagnosis_map = {
+        1: "CAD",
+        2: "Heart Attack",
+        3: "Heart Failure",
+        4: "Arrhythmias",
+        5: "Hypertension",
+        6: "Atherosclerosis",
+        7: "Angina Pectoris",
+        8: "Endocarditis",
+        9: "Valvular Heart Disease",
+        10: "Pericarditis",
+        11: "Cardiomyopathy",
+        12: "Congenital Heart Defects",
+        13: "Pulmonary Embolism",
+        14: "Cardiac Arrest",
+        15: "Cardiogenic Shock",
+        16: "Rheumatic Heart Disease",
+        17: "Heart Valve Regurgitation",
+        18: "Heart Valve Stenosis",
+        19: "Heart Murmur",
+        20: "Peripheral Artery Disease (PAD)"
+    }
+    return diagnosis_map.get(diagnosis_id, "Unknown Diagnosis")
+
+@app.route('/diagnose/<string:patient_id>', methods=['POST'])
+def diagnose_patient(patient_id):
+    max_retries = 100
+    try:
+        current_app.logger.info(f"Diagnosing patient with ID: {patient_id}")
+
+        patient_data = get_patient_data(patient_id)
+        if not patient_data:
+            return jsonify({'error': 'Patient not found'}), 404
+
+        diagnosis_name = "Unknown Diagnosis"
+        for attempt in range(max_retries):
+            if diagnosis_name == "Unknown Diagnosis":
+                if attempt > 0:
+                    current_app.logger.info(f"Retrying diagnosis for patient ID: {patient_id}, attempt: {attempt+1}")
+
+                prepared_data = prepare_patient_data(patient_data)
+                diagnosis_id = model.predict(prepared_data)
+                current_app.logger.info(f"Model predicted diagnosis ID: {diagnosis_id}")
+                diagnosis_name = get_diagnosis_name(diagnosis_id[0])
+
+                if diagnosis_name != "Unknown Diagnosis":
+                    break
+            else:
+                break
+
+        if diagnosis_name == "Unknown Diagnosis":
+            diagnosis_name = "Failed Diagnosis"
+
+        current_app.logger.info(f"Diagnosis name retrieved: {diagnosis_name}")
+
+        result = my_db.patientData.update_one(
+            {"_id": ObjectId(patient_id)},
+            {"$set": {"diagnosis": diagnosis_name}}
+        )
+        if result.modified_count != 1:
+            raise Exception("Failed to update the patient's diagnosis in the database.")
+
+        current_app.logger.info(f"Database updated for patient ID: {patient_id}")
+
+        return jsonify({'diagnosis': diagnosis_name})
+    except Exception as e:
+        current_app.logger.error(f"An error occurred: {e}", exc_info=True)
+        return jsonify({'error': 'Internal Server Error', 'message': str(e)}), 500
 
 def my_log(action, message, user_name):
     log_id = get_sequence("log")
@@ -150,7 +279,7 @@ def symptom_text(value):
         return 'Low'
     elif value == 0.50:
         return 'Medium'
-    elif value == 1:
+    elif value == 0.70:
         return 'High'
     else:
         return 'Unknown'
@@ -162,7 +291,7 @@ def symptom_class(value):
         return 'text-success'
     elif value == 0.50:
         return 'text-warning'
-    elif value == 1:
+    elif value == 0.70:
         return 'text-danger'
     else:
         return ''

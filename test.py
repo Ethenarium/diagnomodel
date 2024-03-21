@@ -4,7 +4,7 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
 import joblib
 
 # Load the model
-model = joblib.load("best_logistic_regression_model.pkl")
+model = joblib.load("logistic_regression_model.pkl")
 
 # Load test data
 test_data = pd.read_csv("patient_data.csv")

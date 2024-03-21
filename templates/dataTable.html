@@ -156,6 +156,32 @@
         });
     }
 
+    $(document).on('click', '.make-diagnosis', function() {
+        var patientId = $(this).data('patient-id');
+        console.log('Making diagnosis for patient ID:', patientId); // Debugging line
+
+        $.ajax({
+            type: 'POST',
+            url: '/diagnose/' + patientId,
+            contentType: 'application/json', // Make sure to set the content type
+            success: function(response) {
+                console.log('Diagnosis response:', response); // Debugging line
+                // Update the table with the diagnosis result
+                if (response.diagnosis) {
+                    $('button[data-patient-id="' + patientId + '"]').replaceWith(response.diagnosis);
+                } else {
+                    alert('Error making diagnosis');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Diagnosis error:', error); // Debugging line
+            }
+        });
+    });
+
+
+
+
     // Hasta bilgilerini yazdırma işlevi
     function printPatientData() {
         var patientName = prompt("Please enter the patient's name:");
@@ -247,6 +273,7 @@
                 <th>Blood Pressure</th>
                 <th>Symptom</th>
                 <th>Blood Values</th>
+                <th>Diagnosis</th>
             </tr>
         </thead>
         <tbody>
@@ -279,6 +306,13 @@
                     <!-- Kan değerleri için modal tetikleyici buton -->
                     <button type="button" class="btn btn-info" data-toggle="modal" data-target="#bloodValuesModal{{ patient._id }}">☰</button>
                 </td>
+                <td>
+                  {% if patient.diagnosis %}
+                    {{ patient.diagnosis }}
+                  {% else %}
+                    <button class="btn btn-primary make-diagnosis" data-patient-id="{{ patient._id }}">Make Diagnosis</button>
+                  {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -307,144 +341,144 @@
           <tbody>
             <!-- Symptomlar ve seviyeleri -->
             <tr>
-              <td>Smoke Level</td>
-              <td class="{{ patient.symptoms.smokeLevel | symptom_class }}">{{ patient.symptoms.smokeLevel | symptom_text }}</td>
+              <td>Smoke</td>
+              <td class="{{ patient.symptoms.smoke | symptom_class }}">{{ patient.symptoms.smoke | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Alcohol Level</td>
-              <td class="{{ patient.symptoms.alcoholLevel | symptom_class }}">{{ patient.symptoms.alcoholLevel | symptom_text }}</td>
+              <td>drinker</td>
+              <td class="{{ patient.symptoms.drinker | symptom_class }}">{{ patient.symptoms.drinker | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Headache Level</td>
-              <td class="{{ patient.symptoms.headacheLevel | symptom_class }}">{{ patient.symptoms.headacheLevel | symptom_text }}</td>
+              <td>Headache</td>
+              <td class="{{ patient.symptoms.headache | symptom_class }}">{{ patient.symptoms.headache | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Chest Pain Level</td>
-              <td class="{{ patient.symptoms.chestPainLevel | symptom_class }}">{{ patient.symptoms.chestPainLevel | symptom_text }}</td>
+              <td>Chest Pain</td>
+              <td class="{{ patient.symptoms.chestPain | symptom_class }}">{{ patient.symptoms.chestPain | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Shortness of Breath Level</td>
-              <td class="{{ patient.symptoms.shortnessOfBreathLevel | symptom_class }}">{{ patient.symptoms.shortnessOfBreathLevel | symptom_text }}</td>
+              <td>Shortness of Breath</td>
+              <td class="{{ patient.symptoms.shortnessOfBreath | symptom_class }}">{{ patient.symptoms.shortnessOfBreath | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Fatigue Level</td>
-              <td class="{{ patient.symptoms.fatigueLevel | symptom_class }}">{{ patient.symptoms.fatigueLevel | symptom_text }}</td>
+              <td>Fatigue</td>
+              <td class="{{ patient.symptoms.fatigue | symptom_class }}">{{ patient.symptoms.fatigue | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Fever Level</td>
-              <td class="{{ patient.symptoms.feverLevel | symptom_class }}">{{ patient.symptoms.feverLevel | symptom_text }}</td>
+              <td>Fever</td>
+              <td class="{{ patient.symptoms.fever | symptom_class }}">{{ patient.symptoms.fever | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Dizziness Level</td>
-              <td class="{{ patient.symptoms.dizzinessLevel | symptom_class }}">{{ patient.symptoms.dizzinessLevel | symptom_text }}</td>
+              <td>Dizziness</td>
+              <td class="{{ patient.symptoms.dizziness | symptom_class }}">{{ patient.symptoms.dizziness | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Swelling Level</td>
-              <td class="{{ patient.symptoms.swellingLevel | symptom_class }}">{{ patient.symptoms.swellingLevel | symptom_text }}</td>
+              <td>Swelling</td>
+              <td class="{{ patient.symptoms.swelling | symptom_class }}">{{ patient.symptoms.swelling | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Irregular Heartbeat Level</td>
-              <td class="{{ patient.symptoms.irregularHeartbeatLevel | symptom_class }}">{{ patient.symptoms.irregularHeartbeatLevel | symptom_text }}</td>
+              <td>Irregular Heartbeat</td>
+              <td class="{{ patient.symptoms.irregularHeartbeat | symptom_class }}">{{ patient.symptoms.irregularHeartbeat | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Nausea or Vomit Level</td>
-              <td class="{{ patient.symptoms.nauseaOrVomitLevel | symptom_class }}">{{ patient.symptoms.nauseaOrVomitLevel | symptom_text }}</td>
+              <td>Nausea or Vomit</td>
+              <td class="{{ patient.symptoms.nauseaOrVomit | symptom_class }}">{{ patient.symptoms.nauseaOrVomit | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Cold Sweats Level</td>
-              <td class="{{ patient.symptoms.coldSweatsLevel | symptom_class }}">{{ patient.symptoms.coldSweatsLevel | symptom_text }}</td>
+              <td>Cold Sweats</td>
+              <td class="{{ patient.symptoms.coldSweats | symptom_class }}">{{ patient.symptoms.coldSweats | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Indigestion or Heartburn Level</td>
-              <td class="{{ patient.symptoms.indigestionOrHeartburnLevel | symptom_class }}">{{ patient.symptoms.indigestionOrHeartburnLevel | symptom_text }}</td>
+              <td>Indigestion or Heartburn</td>
+              <td class="{{ patient.symptoms.indigestionOrHeartburn | symptom_class }}">{{ patient.symptoms.indigestionOrHeartburn | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Pain Spreads to Arm Level</td>
-              <td class="{{ patient.symptoms.painToArmLevel | symptom_class }}">{{ patient.symptoms.painToArmLevel | symptom_text }}</td>
+              <td>Pain Spreads to Arm</td>
+              <td class="{{ patient.symptoms.painToArm | symptom_class }}">{{ patient.symptoms.painToArm | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Jaw Pain Level</td>
-              <td class="{{ patient.symptoms.jawPainLevel | symptom_class }}">{{ patient.symptoms.jawPainLevel | symptom_text }}</td>
+              <td>Jaw Pain</td>
+              <td class="{{ patient.symptoms.jawPain | symptom_class }}">{{ patient.symptoms.jawPain | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Back Pain Level</td>
-              <td class="{{ patient.symptoms.backPainLevel | symptom_class }}">{{ patient.symptoms.backPainLevel | symptom_text }}</td>
+              <td>Back Pain</td>
+              <td class="{{ patient.symptoms.backPain | symptom_class }}">{{ patient.symptoms.backPain | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Fainting Level</td>
-              <td class="{{ patient.symptoms.faintingLevel | symptom_class }}">{{ patient.symptoms.faintingLevel | symptom_text }}</td>
+              <td>Fainting</td>
+              <td class="{{ patient.symptoms.fainting | symptom_class }}">{{ patient.symptoms.fainting | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Persistent Cough Level</td>
-              <td class="{{ patient.symptoms.persistentCoughLevel | symptom_class }}">{{ patient.symptoms.persistentCoughLevel | symptom_text }}</td>
+              <td>Persistent Cough</td>
+              <td class="{{ patient.symptoms.persistentCough | symptom_class }}">{{ patient.symptoms.persistentCough | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Difficulty Sleeping Lying Flat Level</td>
-              <td class="{{ patient.symptoms.difficultySleepingLevel | symptom_class }}">{{ patient.symptoms.difficultySleepingLevel | symptom_text }}</td>
+              <td>Difficulty Sleeping Lying Flat</td>
+              <td class="{{ patient.symptoms.difficultySleeping | symptom_class }}">{{ patient.symptoms.difficultySleeping | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Sudden Weight Gain Level</td>
-              <td class="{{ patient.symptoms.suddenWeightGainLevel | symptom_class }}">{{ patient.symptoms.suddenWeightGainLevel | symptom_text }}</td>
+              <td>Sudden Weight Gain</td>
+              <td class="{{ patient.symptoms.suddenWeightGain | symptom_class }}">{{ patient.symptoms.suddenWeightGain | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Rapid or Irregular Pulse Level</td>
-              <td class="{{ patient.symptoms.rapidOrIrregularPulseLevel | symptom_class }}">{{ patient.symptoms.rapidOrIrregularPulseLevel | symptom_text }}</td>
+              <td>Rapid or Irregular Pulse</td>
+              <td class="{{ patient.symptoms.rapidOrIrregularPulse | symptom_class }}">{{ patient.symptoms.rapidOrIrregularPulse | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Extreme Weakness Level</td>
-              <td class="{{ patient.symptoms.extremeWeaknessLevel | symptom_class }}">{{ patient.symptoms.extremeWeaknessLevel | symptom_text }}</td>
+              <td>Extreme Weakness</td>
+              <td class="{{ patient.symptoms.extremeWeakness | symptom_class }}">{{ patient.symptoms.extremeWeakness | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Loss of Consciousness Level</td>
-              <td class="{{ patient.symptoms.lossOfConsciousnessLevel | symptom_class }}">{{ patient.symptoms.lossOfConsciousnessLevel | symptom_text }}</td>
+              <td>Loss of Consciousness</td>
+              <td class="{{ patient.symptoms.lossOfConsciousness | symptom_class }}">{{ patient.symptoms.lossOfConsciousness | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Blurred Vision Level</td>
-              <td class="{{ patient.symptoms.blurredVisionLevel | symptom_class }}">{{ patient.symptoms.blurredVisionLevel | symptom_text }}</td>
+              <td>Blurred Vision</td>
+              <td class="{{ patient.symptoms.blurredVision | symptom_class }}">{{ patient.symptoms.blurredVision | symptom_text }}</td>
             </tr>
                         <tr>
-              <td>Leg Pain Level</td>
-              <td class="{{ patient.symptoms.legPainLevel | symptom_class }}">{{ patient.symptoms.legPainLevel | symptom_text }}</td>
+              <td>Leg Pain</td>
+              <td class="{{ patient.symptoms.legPain | symptom_class }}">{{ patient.symptoms.legPain | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Numbness in Limbs Level</td>
-              <td class="{{ patient.symptoms.numbnessInLimbsLevel | symptom_class }}">{{ patient.symptoms.numbnessInLimbsLevel | symptom_text }}</td>
+              <td>Numbness in Limbs</td>
+              <td class="{{ patient.symptoms.numbnessInLimbs | symptom_class }}">{{ patient.symptoms.numbnessInLimbs | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Cold Limbs Level</td>
-              <td class="{{ patient.symptoms.coldLimbsLevel | symptom_class }}">{{ patient.symptoms.coldLimbsLevel | symptom_text }}</td>
+              <td>Cold Limbs</td>
+              <td class="{{ patient.symptoms.coldLimbs | symptom_class }}">{{ patient.symptoms.coldLimbs | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Cyanosis Level</td>
-              <td class="{{ patient.symptoms.cyanosisLevel | symptom_class }}">{{ patient.symptoms.cyanosisLevel | symptom_text }}</td>
+              <td>Cyanosis</td>
+              <td class="{{ patient.symptoms.cyanosis | symptom_class }}">{{ patient.symptoms.cyanosis | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Poor Growth in Infants Level</td>
-              <td class="{{ patient.symptoms.poorGrowthInInfantsLevel | symptom_class }}">{{ patient.symptoms.poorGrowthInInfantsLevel | symptom_text }}</td>
+              <td>Poor Growth in Infants</td>
+              <td class="{{ patient.symptoms.poorGrowthInInfants | symptom_class }}">{{ patient.symptoms.poorGrowthInInfants | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Recurrent Respiratory Infections Level</td>
-              <td class="{{ patient.symptoms.recurrentRespiratoryInfectionsLevel | symptom_class }}">{{ patient.symptoms.recurrentRespiratoryInfectionsLevel | symptom_text }}</td>
+              <td>Recurrent Respiratory Infections</td>
+              <td class="{{ patient.symptoms.recurrentRespiratoryInfections | symptom_class }}">{{ patient.symptoms.recurrentRespiratoryInfections | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Sweating Level</td>
-              <td class="{{ patient.symptoms.sweatingLevel | symptom_class }}">{{ patient.symptoms.sweatingLevel | symptom_text }}</td>
+              <td>Sweating</td>
+              <td class="{{ patient.symptoms.sweating | symptom_class }}">{{ patient.symptoms.sweating | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Confusion Level</td>
-              <td class="{{ patient.symptoms.confusionLevel | symptom_class }}">{{ patient.symptoms.confusionLevel | symptom_text }}</td>
+              <td>Confusion</td>
+              <td class="{{ patient.symptoms.confusion | symptom_class }}">{{ patient.symptoms.confusion | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Numbness or Weakness in Legs Level</td>
-              <td class="{{ patient.symptoms.numbnessOrWeaknessInLegsLevel | symptom_class }}">{{ patient.symptoms.numbnessOrWeaknessInLegsLevel | symptom_text }}</td>
+              <td>Numbness or Weakness in Legs</td>
+              <td class="{{ patient.symptoms.numbnessOrWeaknessInLegs | symptom_class }}">{{ patient.symptoms.numbnessOrWeaknessInLegs | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Coldness in Lower Leg or Foot Level</td>
-              <td class="{{ patient.symptoms.coldnessInLowerLegOrFootLevel | symptom_class }}">{{ patient.symptoms.coldnessInLowerLegOrFootLevel | symptom_text }}</td>
+              <td>Coldness in Lower Leg or Foot</td>
+              <td class="{{ patient.symptoms.coldnessInLowerLegOrFoot | symptom_class }}">{{ patient.symptoms.coldnessInLowerLegOrFoot | symptom_text }}</td>
             </tr>
             <tr>
-              <td>Sores or Wounds on Legs or Feet Level</td>
-              <td class="{{ patient.symptoms.soresOrWoundsOnLegsOrFeetLevel | symptom_class }}">{{ patient.symptoms.soresOrWoundsOnLegsOrFeetLevel | symptom_text }}</td>
+              <td>Sores or Wounds on Legs or Feet</td>
+              <td class="{{ patient.symptoms.soresOrWoundsOnLegsOrFeet | symptom_class }}">{{ patient.symptoms.soresOrWoundsOnLegsOrFeet | symptom_text }}</td>
             </tr>
           </tbody>
         </table>
