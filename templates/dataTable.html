@@ -179,9 +179,6 @@
         });
     });
 
-
-
-
     // Hasta bilgilerini yazdırma işlevi
     function printPatientData() {
         var patientName = prompt("Please enter the patient's name:");
@@ -253,8 +250,8 @@
 
 {% block content %}
 <div class="buttonContainer">
-    <button class="printButton" onclick="printPatientData()">Print</button>
-    <button class="downloadExcel" onclick="downloadExcel()">Download Excel</button>
+    <button hidden="hidden" class="printButton" onclick="printPatientData()">Print</button>
+    <button hidden="hidden" class="downloadExcel" onclick="downloadExcel()">Download Excel</button>
 </div>
 
 <div class="container mt-5">
@@ -310,7 +307,7 @@
                   {% if patient.diagnosis %}
                     {{ patient.diagnosis }}
                   {% else %}
-                    <button class="btn btn-primary make-diagnosis" data-patient-id="{{ patient._id }}">Make Diagnosis</button>
+                    <button class="btn btn-info make-diagnosis" data-patient-id="{{ patient._id }}">SUBMIT</button>
                   {% endif %}
                 </td>
             </tr>
@@ -345,7 +342,7 @@
               <td class="{{ patient.symptoms.smoke | symptom_class }}">{{ patient.symptoms.smoke | symptom_text }}</td>
             </tr>
             <tr>
-              <td>drinker</td>
+              <td>Drinker</td>
               <td class="{{ patient.symptoms.drinker | symptom_class }}">{{ patient.symptoms.drinker | symptom_text }}</td>
             </tr>
             <tr>

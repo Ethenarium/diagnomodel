@@ -271,7 +271,6 @@ def submit():
     return redirect(url_for('index'))
 
 
-
 @app.template_filter('symptom_text')
 def symptom_text(value):
     if value == 0:
