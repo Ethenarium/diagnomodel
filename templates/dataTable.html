@@ -250,8 +250,8 @@
 
 {% block content %}
 <div class="buttonContainer">
-    <button hidden="hidden" class="printButton" onclick="printPatientData()">Print</button>
-    <button hidden="hidden" class="downloadExcel" onclick="downloadExcel()">Download Excel</button>
+    <button class="printButton" onclick="printPatientData()">Print</button>
+    <button class="downloadExcel" onclick="downloadExcel()">Download Excel</button>
 </div>
 
 <div class="container mt-5">
@@ -351,7 +351,7 @@
             </tr>
             <tr>
               <td>Chest Pain</td>
-              <td class="{{ patient.symptoms.chestPain | symptom_class }}">{{ patient.symptoms.chestPain | symptom_text }}</td>
+                <td class="{{ patient.symptoms.chestPain | symptom_class }}">{{ patient.symptoms.chestPain | symptom_text }}</td>
             </tr>
             <tr>
               <td>Shortness of Breath</td>

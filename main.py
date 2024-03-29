@@ -21,12 +21,15 @@ model = joblib.load('logistic_regression_model.pkl')
 if not os.path.exists('uploads'):  # Eğer 'uploads' klasörü mevcut değilse,
     os.makedirs('uploads')  # 'uploads' klasörünü oluşturur
 
+
 def get_sequence(seq_name):  # Veritabanında belirli bir sayaç için sıra numarası alır veya oluşturur
     return my_db.counters.find_one_and_update(filter={"_id": seq_name}, update={"$inc": {"seq": 1}}, upsert=True)["seq"]
+
 
 def get_patient_data(patient_id):
     patient_record = my_db.patientData.find_one({"_id": ObjectId(patient_id)})
     return patient_record
+
 
 def prepare_patient_data(patient_data):
 
@@ -83,6 +86,8 @@ def prepare_patient_data(patient_data):
 
     features_df = pd.DataFrame([features], columns=feature_names)
     return features_df
+
+
 def get_diagnosis_name(diagnosis_id):
     diagnosis_map = {
         1: "CAD",
@@ -107,6 +112,7 @@ def get_diagnosis_name(diagnosis_id):
         20: "Peripheral Artery Disease (PAD)"
     }
     return diagnosis_map.get(diagnosis_id, "Unknown Diagnosis")
+
 
 @app.route('/diagnose/<string:patient_id>', methods=['POST'])
 def diagnose_patient(patient_id):
@@ -152,6 +158,7 @@ def diagnose_patient(patient_id):
     except Exception as e:
         current_app.logger.error(f"An error occurred: {e}", exc_info=True)
         return jsonify({'error': 'Internal Server Error', 'message': str(e)}), 500
+
 
 def my_log(action, message, user_name):
     log_id = get_sequence("log")
@@ -279,7 +286,7 @@ def symptom_text(value):
         return 'Low'
     elif value == 0.50:
         return 'Medium'
-    elif value == 0.70:
+    elif value == 1:
         return 'High'
     else:
         return 'Unknown'
@@ -291,7 +298,7 @@ def symptom_class(value):
         return 'text-success'
     elif value == 0.50:
         return 'text-warning'
-    elif value == 0.70:
+    elif value == 1:
         return 'text-danger'
     else:
         return ''
