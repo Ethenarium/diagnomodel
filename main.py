@@ -1,16 +1,15 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import functools
 import os
 from flask import Flask, redirect, render_template, request, session, url_for, jsonify, current_app
-from werkzeug.utils import secure_filename  # secure_filename için eklendi
+from werkzeug.utils import secure_filename
 import pymongo
 from decouple import config
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd  # pandas için eklendi
+import pandas as pd
 from bson.objectid import ObjectId
 import json
 import joblib
+from flask_mail import Mail, Message
 
 app = Flask('app')  # Flask uygulaması oluşturur
 app.secret_key = config('secret')  # Flask uygulamasının gizli anahtarını .env dosyasından ayarlar
@@ -114,52 +113,6 @@ def get_diagnosis_name(diagnosis_id):
     return diagnosis_map.get(diagnosis_id, "Unknown Diagnosis")
 
 
-@app.route('/diagnose/<string:patient_id>', methods=['POST'])
-def diagnose_patient(patient_id):
-    max_retries = 100
-    try:
-        current_app.logger.info(f"Diagnosing patient with ID: {patient_id}")
-
-        patient_data = get_patient_data(patient_id)
-        if not patient_data:
-            return jsonify({'error': 'Patient not found'}), 404
-
-        diagnosis_name = "Unknown Diagnosis"
-        for attempt in range(max_retries):
-            if diagnosis_name == "Unknown Diagnosis":
-                if attempt > 0:
-                    current_app.logger.info(f"Retrying diagnosis for patient ID: {patient_id}, attempt: {attempt+1}")
-
-                prepared_data = prepare_patient_data(patient_data)
-                diagnosis_id = model.predict(prepared_data)
-                current_app.logger.info(f"Model predicted diagnosis ID: {diagnosis_id}")
-                diagnosis_name = get_diagnosis_name(diagnosis_id[0])
-
-                if diagnosis_name != "Unknown Diagnosis":
-                    break
-            else:
-                break
-
-        if diagnosis_name == "Unknown Diagnosis":
-            diagnosis_name = "Failed Diagnosis"
-
-        current_app.logger.info(f"Diagnosis name retrieved: {diagnosis_name}")
-
-        result = my_db.patientData.update_one(
-            {"_id": ObjectId(patient_id)},
-            {"$set": {"diagnosis": diagnosis_name}}
-        )
-        if result.modified_count != 1:
-            raise Exception("Failed to update the patient's diagnosis in the database.")
-
-        current_app.logger.info(f"Database updated for patient ID: {patient_id}")
-
-        return jsonify({'diagnosis': diagnosis_name})
-    except Exception as e:
-        current_app.logger.error(f"An error occurred: {e}", exc_info=True)
-        return jsonify({'error': 'Internal Server Error', 'message': str(e)}), 500
-
-
 def my_log(action, message, user_name):
     log_id = get_sequence("log")
     return my_db.logs.insert_one({
@@ -225,6 +178,7 @@ def ref():
 def submit():
     # Form verilerini al
     name = request.form.get("name")
+    email = request.form.get("email")
     age = int(request.form.get("age", 0))  # Use 0 as default if age is not provided
     weight = float(request.form.get("weight", 0))  # Eğer değer yoksa 0 olarak kabul et
     height = float(request.form.get("height", 0))  # Eğer değer yoksa 0 olarak kabul et
@@ -237,6 +191,7 @@ def submit():
     patient_data = {
         "_id": ObjectId(),
         "name": name,
+        "email": email,
         "gender": request.form.get("gender", "None"),
         "age": age,
         "weight": weight,
@@ -328,6 +283,71 @@ def get_patient_by_name(patient_name):
             return jsonify({'error': 'Patient not found'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+app.config.update(
+    MAIL_SERVER='smtp.office365.com',
+    MAIL_PORT=587,
+    MAIL_USE_TLS=True,
+    MAIL_USERNAME='anakinskyw0@hotmail.com',
+    MAIL_PASSWORD='Seftali6872++',
+    MAIL_DEFAULT_SENDER='anakinskyw0@hotmail.com'
+)
+
+mail = Mail(app)
+
+
+@app.route('/diagnose/<string:patient_id>', methods=['POST'])
+def diagnose_patient(patient_id):
+    max_retries = 100
+    try:
+        current_app.logger.info(f"Diagnosing patient with ID: {patient_id}")
+
+        patient_data = get_patient_data(patient_id)
+        if not patient_data:
+            return jsonify({'error': 'Patient not found'}), 404
+
+        diagnosis_name = "Unknown Diagnosis"
+        for attempt in range(max_retries):
+            if diagnosis_name == "Unknown Diagnosis":
+                if attempt > 0:
+                    current_app.logger.info(f"Retrying diagnosis for patient ID: {patient_id}, attempt: {attempt + 1}")
+
+                prepared_data = prepare_patient_data(patient_data)
+                diagnosis_id = model.predict(prepared_data)
+                current_app.logger.info(f"Model predicted diagnosis ID: {diagnosis_id}")
+                diagnosis_name = get_diagnosis_name(diagnosis_id[0])
+
+                if diagnosis_name != "Unknown Diagnosis":
+                    break
+            else:
+                break
+
+        if diagnosis_name == "Unknown Diagnosis":
+            diagnosis_name = "Failed Diagnosis"
+
+        current_app.logger.info(f"Diagnosis name retrieved: {diagnosis_name}")
+
+        result = my_db.patientData.update_one(
+            {"_id": ObjectId(patient_id)},
+            {"$set": {"diagnosis": diagnosis_name}}
+        )
+        if result.modified_count == 1:
+            send_diagnosis_email(patient_data.get('email', ''), diagnosis_name)
+            current_app.logger.info(f"Database updated and email sent for patient ID: {patient_id}")
+            return jsonify({'diagnosis': diagnosis_name})
+        else:
+            raise Exception("Failed to update the patient's diagnosis in the database.")
+    except Exception as e:
+        current_app.logger.error(f"An error occurred: {e}", exc_info=True)
+        return jsonify({'error': 'Internal Server Error', 'message': str(e)}), 500
+
+
+def send_diagnosis_email(email, diagnosis):
+    msg = Message("Your Diagnosis Result",
+                  recipients=[email])
+    msg.body = f"Dear Patient,\n\nYour diagnosis result is: {diagnosis}.\nPlease consult with your physician for further advice.\n\nBest regards,\nMedical Team"
+    mail.send(msg)
 
 
 if __name__ == '__main__':

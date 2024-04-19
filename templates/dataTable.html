@@ -245,6 +245,30 @@
     $(document).ready(function() {
         $('#patientTable').DataTable();
     });
+
+    $(document).on('click', '.make-diagnosis', function() {
+        var patientId = $(this).data('patient-id');
+        console.log('Making diagnosis for patient ID:', patientId);
+
+        $.ajax({
+            type: 'POST',
+            url: '/diagnose/' + patientId,
+            contentType: 'application/json',
+            success: function(response) {
+                console.log('Diagnosis response:', response);
+                if (response.diagnosis) {
+                    $('button[data-patient-id="' + patientId + '"]').replaceWith(response.diagnosis);
+                    alert('Diagnosis updated successfully. An email has been sent.');
+                } else {
+                    alert('Diagnosis update failed.');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Diagnosis error:', error);
+                alert('Error in diagnosis process: ' + xhr.responseText);
+            }
+        });
+    });
 </script>
 {% endblock %}
 
