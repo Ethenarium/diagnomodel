@@ -13,6 +13,11 @@
         width: 105%;
     }
 
+    .modal-body img {
+        max-height: 100vh;  /* Adjust based on your needs */
+        max-width: 100%;  /* Ensure the image is responsive */
+    }
+
     #patientTable td, #patientTable th {
         padding: 15px; /* Hücre içi boşluğu artır */
         font-size: 16px; /* Yazı tipi boyutunu artır */
@@ -181,65 +186,85 @@
 
     // Hasta bilgilerini yazdırma işlevi
     function printPatientData() {
-        var patientName = prompt("Please enter the patient's name:");
+        var patientId = prompt("Please enter the patient's ID:");
+        if (!patientId) return;  // Exit if no ID is provided
 
         $.ajax({
-            url: '/api/patients/' + patientName,
+            url: '/api/patients/' + patientId,
             type: 'GET',
             success: function(patientData) {
-                var printWindow = window.open('', '_blank');
-                printWindow.document.write('<h2>Patient Data</h2>');
-                printWindow.document.write('<html><head><title>Patient Data</title></head><body>');
-                printWindow.document.write('<table border="1">');
-                printWindow.document.write('<tr><th>Name</th><td>' + patientData.name + '</td></tr>');
-                printWindow.document.write('<tr><th>Age</th><td>' + patientData.age + '</td></tr>');
-                printWindow.document.write('<tr><th>Weight</th><td>' + patientData.weight + '</td></tr>');
-                printWindow.document.write('<tr><th>Height</th><td>' + patientData.height + '</td></tr>');
-                printWindow.document.write('<tr><th>BMI</th><td>' + patientData.bmi + '</td></tr>');
-                printWindow.document.write('<tr><th>Sigara</th><td>' + (patientData.sigara ? 'Yes' : 'No') + '</td></tr>');
-                printWindow.document.write('<tr><th>Alkol</th><td>' + (patientData.alkol ? 'Yes' : 'No') + '</td></tr>');
-                printWindow.document.write('<tr><th>Drug</th><td>' + (patientData.drug ? 'Yes' : 'No') + '</td></tr>');
-                printWindow.document.write('<tr><th>Family History</th><td>' + patientData.familyHistory + '</td></tr>');
-                printWindow.document.write('<tr><th>Blood Pressure</th><td>' + patientData.bloodPressure + '</td></tr>');
-                printWindow.document.write('<tr><th>Symptom</th><td>' + (patientData.symptom ? patientData.symptom : 'None') + '</td></tr>');
-                printWindow.document.write('</table>');
+                // Fetch the doctor's information
+                $.ajax({
+                    url: '/api/doctor/akbuluterberk@gmail.com', // Use the logged-in doctor's email, adjust as necessary
+                    type: 'GET',
+                    success: function(doctorData) {
+                        var printWindow = window.open('', '_blank');
+                        printWindow.document.write(`
+                            <html>
+                            <head>
+                                <title>Patient Data</title>
+                                <style>
+                                    body { font-family: Arial, sans-serif; margin: 20px; }
+                                    h2, h3 { color: #333; }
+                                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                                    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+                                    th { background-color: #f2f2f2; }
+                                    .section { margin-top: 30px; }
+                                </style>
+                            </head>
+                            <body>
+                                <h2>Patient Data</h2>
+                                <table>
+                                    <tr><th>Name</th><td>${patientData.name}</td></tr>
+                                    <tr><th>Gender</th><td>${patientData.gender}</td></tr>
+                                    <tr><th>Age</th><td>${patientData.age}</td></tr>
+                                    <tr><th>Weight</th><td>${patientData.weight}</td></tr>
+                                    <tr><th>Height</th><td>${patientData.height}</td></tr>
+                                    <tr><th>BMI</th><td>${patientData.bmi}</td></tr>
+                                    <tr><th>Family History</th><td>${patientData.familyHistory}</td></tr>
+                                    <tr><th>Blood Pressure</th><td>${patientData.bloodPressureMin}, ${patientData.bloodPressureMax}</td></tr>
+                                </table>
 
-                // Blood Values
-                printWindow.document.write('<h2>Blood Values</h2>');
-                patientData.blood_values.forEach(function(bloodValue, index) {
-                    printWindow.document.write('<h3>Blood Value ' + (index + 1) + '</h3>');
-                    printWindow.document.write('<table border="1">');
-                    printWindow.document.write('<tr><th>Blood Type</th><td>' + bloodValue.bloodType + '</td></tr>');
-                    printWindow.document.write('<tr><th>RBC</th><td>' + bloodValue.rbc + '</td></tr>');
-                    printWindow.document.write('<tr><th>Hemoglobin</th><td>' + bloodValue.hemoglobin + '</td></tr>');
-                    printWindow.document.write('<tr><th>Hematocrit</th><td>' + bloodValue.hematocrit + '</td></tr>');
-                    printWindow.document.write('<tr><th>MCV</th><td>' + bloodValue.mcv + '</td></tr>');
-                    printWindow.document.write('<tr><th>MCH</th><td>' + bloodValue.mch + '</td></tr>');
-                    printWindow.document.write('<tr><th>MCHC</th><td>' + bloodValue.mchc + '</td></tr>');
-                    printWindow.document.write('<tr><th>RDW</th><td>' + bloodValue.rdw + '</td></tr>');
-                    printWindow.document.write('<tr><th>WBC</th><td>' + bloodValue.wbc + '</td></tr>');
-                    printWindow.document.write('<tr><th>Neutrophill</th><td>' + bloodValue.neutrophill + '</td></tr>');
-                    printWindow.document.write('<tr><th>Lymphocyte</th><td>' + bloodValue.lymphocyte + '</td></tr>');
-                    printWindow.document.write('<tr><th>Monocyte</th><td>' + bloodValue.monocyte + '</td></tr>');
-                    printWindow.document.write('<tr><th>Eosinophill</th><td>' + bloodValue.eosinophill + '</td></tr>');
-                    printWindow.document.write('<tr><th>Basophill</th><td>' + bloodValue.basophill + '</td></tr>');
-                    printWindow.document.write('<tr><th>Platelet</th><td>' + bloodValue.platelet + '</td></tr>');
-                    printWindow.document.write('<tr><th>PDW</th><td>' + bloodValue.pdw + '</td></tr>');
-                    printWindow.document.write('<tr><th>MPV</th><td>' + bloodValue.mpv + '</td></tr>');
-                    printWindow.document.write('<tr><th>PCT</th><td>' + bloodValue.pct + '</td></tr>');
-                    printWindow.document.write('</table>');
+                                <div class="section">
+                                    <h3>Symptoms</h3>
+                                    <table>
+                                        ${Object.keys(patientData.symptoms).map(key => `<tr><th>${key}</th><td>${patientData.symptoms[key]}</td></tr>`).join('')}
+                                    </table>
+                                </div>
+
+                                <div class="section">
+                                    <h3>Blood Values</h3>
+                                    ${patientData.blood_values.map(bloodValue => `
+                                        <table>
+                                            ${Object.keys(bloodValue).map(key => `<tr><th>${key}</th><td>${bloodValue[key]}</td></tr>`).join('')}
+                                        </table>
+                                    `).join('<br>')}
+                                </div>
+
+                                <div class="section">
+                                    <h3>Doctor Details</h3>
+                                    <p>Responsible Doctor: ${doctorData.full_name}</p>
+                                    <p>Signature: ______________________</p>
+                                </div>
+                            </body>
+                            </html>
+                        `);
+                        printWindow.document.close();
+                        printWindow.print();
+                        printWindow.close();
+                    },
+                    error: function(error) {
+                        alert("Error fetching doctor data: " + JSON.stringify(error));
+                    }
                 });
-
-                printWindow.document.write('</body></html>');
-                printWindow.document.close();
-                printWindow.print();
-                printWindow.close();
             },
             error: function(error) {
                 alert("Error fetching patient data: " + JSON.stringify(error));
             }
         });
     }
+
+
 
     // DataTables eklentisini etkinleştirme
     $(document).ready(function() {
@@ -269,6 +294,8 @@
             }
         });
     });
+
+
 </script>
 {% endblock %}
 
@@ -284,6 +311,7 @@
         <thead class="thead-dark">
             <tr>
                 <!-- Tablo başlıkları -->
+                <th>Photo</th>
                 <th>Name</th>
                 <th>Gender</th>
                 <th>Age</th>
@@ -301,6 +329,9 @@
             {% for patient in patients %}
             <tr>
                 <!-- Hasta bilgileri -->
+                <td>
+                    <button type="button" class="btn btn-info" data-toggle="modal" data-target="#imageModal{{ patient._id }}">👁️</button>
+                </td>
                 <td>{{ patient.name }}</td>
                 <td>{{ patient.gender }}</td>
                 <td>{{ patient.age }}</td>
@@ -633,6 +664,24 @@
     </div>
   </div>
 </div>
+
+<!-- Foto için modal -->
+<div class="modal fade" id="imageModal{{ patient._id }}" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel{{ patient._id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel{{ patient._id }}">Patient Image: {{ patient.name }}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <img src="/get_image/{{ patient._id }}" class="img-fluid" alt="Patient Image">
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endfor %}
 
 {% endblock %}

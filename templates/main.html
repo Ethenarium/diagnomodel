@@ -234,6 +234,11 @@
             $('#file-chosen').text(fileName); // Seçilen dosya adını güncelle
         });
 
+        $('#patientImage').on('change', function() {
+            var fileName = $(this).val().split('\\').pop();
+            $('#image-chosen').text(fileName);
+        });
+
         $('form').on('submit', function(event) {
             event.preventDefault(); // Formun varsayılan gönderme davranışını engelle
             $('#form-container').hide(); // Formu gizle
@@ -287,6 +292,12 @@
                     <div class="form-group">
                         <label for="name">Name:</label>
                         <input type="text" class="form-control" name="name" id="name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="patientImage" class="file-upload-btn">Upload Image</label>
+                        <input type="file" class="form-control-file" name="patientImage" id="patientImage" accept="image/*" style="display: none;">
+                        <span id="image-chosen">No Image Chosen</span>
                     </div>
 
                     <div class="form-group">

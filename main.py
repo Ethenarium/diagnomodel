@@ -1,7 +1,7 @@
 from datetime import datetime
 import functools
 import os
-from flask import Flask, redirect, render_template, request, session, url_for, jsonify, current_app
+from flask import Flask, redirect, render_template, request, session, url_for, jsonify, current_app, Response
 from werkzeug.utils import secure_filename
 import pymongo
 from decouple import config
@@ -10,6 +10,9 @@ from bson.objectid import ObjectId
 import json
 import joblib
 from flask_mail import Mail, Message
+from bson.binary import Binary
+import io
+import base64
 
 app = Flask('app')  # Flask uygulaması oluşturur
 app.secret_key = config('secret')  # Flask uygulamasının gizli anahtarını .env dosyasından ayarlar
@@ -227,10 +230,28 @@ def submit():
 
             os.remove(filepath)  # Dosyayı işledikten sonra sil
 
+    if 'patientImage' in request.files:
+        image_file = request.files['patientImage']
+        if image_file.filename != '':
+            filename = secure_filename(image_file.filename)
+            content_type = image_file.content_type
+            image_bytes = io.BytesIO(image_file.read())
+            binary_image = Binary(image_bytes.getvalue())
+            patient_data['image'] = binary_image
+            patient_data['image_type'] = content_type
+
     # Veritabanına patientData ekleyin
     my_db.patientData.insert_one(patient_data)
 
     return redirect(url_for('index'))
+
+
+@app.route('/get_image/<patient_id>')
+def get_image(patient_id):
+    patient = my_db.patientData.find_one({"_id": ObjectId(patient_id)})
+    if patient and 'image' in patient:
+        return Response(patient['image'], mimetype=patient.get('image_type', 'image/png'))
+    return 'No image found', 404
 
 
 @app.template_filter('symptom_text')
@@ -260,13 +281,26 @@ def symptom_class(value):
 
 
 @app.route('/api/diagnosis', methods=['GET'])
-@login_required
 def get_all_inventory():
     try:
-        patients = list(my_db.patientData.find())
+        # Use projection to exclude the 'image' field
+        patients = list(my_db.patientData.find({}, projection={'image': False}))
         for patient in patients:
             patient['_id'] = str(patient['_id'])
         return jsonify(patients)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/doctor/<email>', methods=['GET'])
+@login_required
+def get_doctor_by_email(email):
+    try:
+        doctor = my_db.users.find_one({"_id": email}, {"_id": 0, "full_name": 1})
+        if doctor:
+            return jsonify(doctor)
+        else:
+            return jsonify({'error': 'Doctor not found'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
