@@ -1,38 +1,32 @@
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import GridSearchCV, StratifiedKFold
-import joblib
+from tensorflow import keras
+from tensorflow.keras import layers
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.optimizers import Adam
 import time
 
-# Load the dataset
-df = pd.read_csv('patient_data.csv')
+df = pd.read_csv('pad.csv')
 
-# Separate features and target variable
+num_classes = 21
 X = df.drop(['Diagnosis Result'], axis=1)
-y = df['Diagnosis Result']
+y = keras.utils.to_categorical(df['Diagnosis Result'], num_classes)
 
-# Initialize logistic regression model
-model = LogisticRegression(max_iter=1000, multi_class='ovr')
+model = Sequential()
+model.add(layers.InputLayer(input_shape=(X.shape[1],)))
+model.add(layers.Dense(64, activation='relu'))
+model.add(layers.Dropout(0.5))
+model.add(layers.Dense(64, activation='relu'))
+model.add(layers.Dropout(0.5))
+model.add(layers.Dense(num_classes, activation='softmax'))
 
-# Define hyperparameters for grid search
-param_grid = {
-    'C': [0.001],
-    'class_weight': ['balanced', None]
-}
-
-# Initialize GridSearchCV
-grid_search = GridSearchCV(model, param_grid, cv=StratifiedKFold(n_splits=5), scoring='f1_macro', verbose=2)
+model.compile(optimizer=Adam(learning_rate=0.001),
+              loss='categorical_crossentropy',
+              metrics=['accuracy'])
 
 start_time = time.time()
-# Perform grid search to find the best hyperparameters
-grid_search.fit(X, y)
+history = model.fit(X, y, epochs=50, batch_size=32, verbose=2)
 end_time = time.time()
 
-# Get the best model
-best_model = grid_search.best_estimator_
+print("Time taken for training:", end_time - start_time, "seconds")
 
-# Save the best model
-joblib.dump(best_model, 'best_logistic_regression_model.pkl')
-
-print("Best hyperparameters found:", grid_search.best_params_)
-print("Time taken for grid search:", end_time - start_time, "seconds")
+model.save('pad_model.keras')

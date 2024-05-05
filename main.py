@@ -1,6 +1,7 @@
 from datetime import datetime
 import functools
 import os
+import numpy as np
 from flask import Flask, redirect, render_template, request, session, url_for, jsonify, current_app, Response
 from werkzeug.utils import secure_filename
 import pymongo
@@ -13,12 +14,33 @@ from flask_mail import Mail, Message
 from bson.binary import Binary
 import io
 import base64
+from tensorflow.keras.models import load_model
 
 app = Flask('app')  # Flask uygulaması oluşturur
 app.secret_key = config('secret')  # Flask uygulamasının gizli anahtarını .env dosyasından ayarlar
 my_client = pymongo.MongoClient(config('mongo_url'))  # MongoDB istemcisini .env dosyasındaki URL ile başlatır
 my_db = my_client[config('db_name')]  # MongoDB veritabanını .env dosyasındaki isimle seçer
-model = joblib.load('logistic_regression_model.pkl')
+
+angina_pectoris_model = load_model('angina_pectoris_model.keras')
+arrhythmias_model = load_model('arrhythmias_model.keras')
+atherosclerosis_model = load_model('atherosclerosis_model.keras')
+cad_model = load_model('cad_model.keras')
+cardiac_arrest_model = load_model('cardiac_arrest_model.keras')
+cardiogenic_shock_model = load_model('cardiogenic_shock_model.keras')
+cardiomyopathy_model = load_model('cardiomyopathy_model.keras')
+congenital_heart_defects_model = load_model('congenital_heart_defects_model.keras')
+endocarditis_model = load_model('endocarditis_model.keras')
+heart_attack_model = load_model('heart_attack_model.keras')
+heart_failure_model = load_model('heart_failure_model.keras')
+heart_murmur_model = load_model('heart_murmur_model.keras')
+heart_valve_regurgitation_model = load_model('heart_valve_regurgitation_model.keras')
+heart_valve_stenosis_model = load_model('heart_valve_stenosis_model.keras')
+hypertension_model = load_model('hypertension_model.keras')
+pad_model = load_model('pad_model.keras')
+pericarditis_model = load_model('pericarditis_model.keras')
+pulmonary_embolism_model = load_model('pulmonary_embolism_model.keras')
+rheumatic_heart_disease_model = load_model('rheumatic_heart_disease_model.keras')
+valvular_heart_disease_model = load_model('valvular_heart_disease_model.keras')
 
 if not os.path.exists('uploads'):  # Eğer 'uploads' klasörü mevcut değilse,
     os.makedirs('uploads')  # 'uploads' klasörünü oluşturur
@@ -330,10 +352,57 @@ app.config.update(
 
 mail = Mail(app)
 
+def classify_symptoms(symptoms):
+    diseases = {
+        'Cad': ['ChestPain', 'ShortnessOfBreath', 'Fatigue', 'IrregularHeartbeat', 'ExtremeWeakness', 'BlurredVision'], # CAD
+        'Heart Attack': ['ChestPain', 'ShortnessOfBreath', 'Nausea', 'ColdSweats', 'PainArm', 'PoorGrowthInInfants'], # Heart Attack
+        'Heart Failure': ['ShortnessOfBreath', 'Fatigue', 'Swelling', 'PersistentCough', 'RapidPulse', 'JawPain'], # Heart Failure
+        'Arrhythmias': ['Palpitations', 'Dizziness', 'Fainting', 'RapidPulse', 'Fatigue', 'ChestPain'],  # Arrhythmias
+        'Hypertension': ['Headache', 'Dizziness', 'BlurredVision', 'ShortnessOfBreath', 'Cyanosis', 'ColdSweats'],  # Hypertension
+        'Atherosclerosis': ['ChestPain', 'LegPain', 'NumbnessInLimbs', 'ColdLimbs', 'ExtremeWeakness', 'Confusion'],  # Atherosclerosis
+        'Angina Pectoris': ['ChestPain', 'ShortnessOfBreath', 'Fatigue', 'Nausea', 'IrregularHeartbeat', 'Cyanosis'],  # Angina Pectoris
+        'Endocarditis': ['Fatigue', 'ShortnessOfBreath', 'ChestPain', 'Fever', 'ColdSweats'],  # Endocarditis
+        'Valvular Heart Disease': ['ShortnessOfBreath', 'ChestPain', 'Fatigue', 'Dizziness', 'Swelling', 'Drinker'],  # Valvular Heart Disease
+        'Pericarditis': ['ChestPain', 'Fever', 'ShortnessOfBreath', 'Fatigue', 'Drinker', 'RapidPulse'],  # Pericarditis
+        'Cardiomyopathy': ['ShortnessOfBreath', 'Fatigue', 'Swelling', 'IrregularHeartbeat', 'Dizziness','Indigestion'],  # Cardiomyopathy
+        'Congenital Heart Defects': ['Cyanosis', 'ShortnessOfBreath', 'PoorGrowthInInfants', 'Fatigue','RecurrentRespiratoryInfections', 'Nausea'],  # Congenital Heart Defects
+        'Pulmonary Embolism': ['ShortnessOfBreath', 'ChestPain', 'RapidPulse', 'Sweating', 'Indigestion', 'Fever'],  # Pulmonary Embolism
+        'Cardiac Arrest': ['LossOfConsciousness', 'Fainting', 'ExtremeWeakness', 'Nausea', 'BackPain', 'LegPain'],  # Cardiac Arrest
+        'Cardiogenic Shock': ['RapidPulse', 'Fatigue', 'ColdSweats', 'Confusion', 'DifficultySleeping','RecurrentRespiratoryInfections'],  # Cardiogenic Shock
+        'Rheumatic Heart Disease': ['Fatigue', 'ShortnessOfBreath', 'ChestPain', 'Fever', 'Sweating','IrregularHeartbeat'],  # Rheumatic Heart Disease
+        'Heart Valve Regurgitation': ['Fatigue', 'ShortnessOfBreath', 'Palpitations', 'Swelling', 'ColdnessInLowerLegOrFoot', 'Cyanosis'],  # Heart Valve Regurgitation
+        'Heart Valve Stenosis': ['ChestPain', 'ShortnessOfBreath', 'Fatigue', 'Fainting', 'SoresOrWoundsOnToesFeetOrLegs', 'Nausea'],  # Heart Valve Stenosis
+        'Heart Murmur': ['ShortnessOfBreath', 'Fatigue', 'Dizziness', 'Swelling', 'Confusion', 'Drinker'], # Heart Murmur
+        'Peripheral Artery Disease (PAD)': ['LegPain', 'NumbnessOrWeaknessInLegs', 'ColdnessInLowerLegOrFoot', 'SoresOrWoundsOnToesFeetOrLegs', 'Drinker'] # Peripheral Artery Disease (PAD)
+    }
+
+    best_match = None
+    max_count = 0
+    max_intensity = 0
+
+    for disease, relevant_symptoms in diseases.items():
+        symptom_count = sum(symptom in symptoms for symptom in relevant_symptoms)
+        symptom_intensity = sum(symptoms[symptom] for symptom in relevant_symptoms if symptom in symptoms)
+
+        if symptom_count > max_count or (symptom_count == max_count and symptom_intensity > max_intensity):
+            best_match = disease
+            max_count = symptom_count
+            max_intensity = symptom_intensity
+
+    return best_match
+
+
+def process_input(symptoms):
+    disease = classify_symptoms(symptoms)
+    if disease:
+        model = load_model(f"{disease.lower().replace(' ', '_')}_model.keras")
+        input_data = np.array([list(symptoms.values())])
+        prediction = model.predict(input_data)
+        return disease, prediction[0]
+    return 'No disease detected or insufficient data', None
 
 @app.route('/diagnose/<string:patient_id>', methods=['POST'])
 def diagnose_patient(patient_id):
-    max_retries = 100
     try:
         current_app.logger.info(f"Diagnosing patient with ID: {patient_id}")
 
@@ -341,37 +410,63 @@ def diagnose_patient(patient_id):
         if not patient_data:
             return jsonify({'error': 'Patient not found'}), 404
 
-        diagnosis_name = "Unknown Diagnosis"
-        for attempt in range(max_retries):
-            if diagnosis_name == "Unknown Diagnosis":
-                if attempt > 0:
-                    current_app.logger.info(f"Retrying diagnosis for patient ID: {patient_id}, attempt: {attempt + 1}")
+        symptoms = {
+            'Age': patient_data.get('age',0),
+            'BMI': patient_data.get('bmi',0),
+            'Smoker': patient_data['symptoms'].get('smoke', 0),
+            'Drinker': patient_data['symptoms'].get('drinker', 0),
+            'Headache': patient_data['symptoms'].get('headache', 0),
+            'Fatigue': patient_data['symptoms'].get('fatigue', 0),
+            'Fever': patient_data['symptoms'].get('fever',0),
+            'ChestPain': patient_data['symptoms'].get('chestPain', 0),
+            'ShortnessOfBreath': patient_data['symptoms'].get('shortnessOfBreath', 0),
+            'Dizziness': patient_data['symptoms'].get('dizziness', 0),
+            'Palpitations': patient_data['symptoms'].get('palpitations', 0),
+            'Swelling': patient_data['symptoms'].get('swelling', 0),
+            'IrregularHeartbeat': patient_data['symptoms'].get('irregularHeartbeat', 0),
+            'Nausea': patient_data['symptoms'].get('nauseaOrVomit', 0),
+            'ColdSweats': patient_data['symptoms'].get('coldSweats', 0),
+            'Indigestion': patient_data['symptoms'].get('indigestionOrHeartburn', 0),
+            'PainArm': patient_data['symptoms'].get('painToArm', 0),
+            'JawPain': patient_data['symptoms'].get('jawPain', 0),
+            'BackPain': patient_data['symptoms'].get('backPain', 0),
+            'Fainting': patient_data['symptoms'].get('fainting', 0),
+            'PersistentCough': patient_data['symptoms'].get('persistentCough', 0),
+            'DifficultySleeping': patient_data['symptoms'].get('difficultySleeping', 0),
+            'SuddenWeightGain': patient_data['symptoms'].get('suddenWeightGain', 0),
+            'RapidPulse': patient_data['symptoms'].get('rapidOrIrregularPulse', 0),
+            'ExtremeWeakness': patient_data['symptoms'].get('extremeWeakness', 0),
+            'LossOfConsciousness': patient_data['symptoms'].get('lossOfConsciousness', 0),
+            'BlurredVision': patient_data['symptoms'].get('blurredVision', 0),
+            'LegPain': patient_data['symptoms'].get('legPain', 0),
+            'NumbnessInLimbs': patient_data['symptoms'].get('numbnessInLimbs', 0),
+            'ColdLimbs': patient_data['symptoms'].get('coldLimbs', 0),
+            'Cyanosis': patient_data['symptoms'].get('cyanosis', 0),
+            'PoorGrowthInInfants': patient_data['symptoms'].get('poorGrowthInInfants', 0),
+            'RecurrentRespiratoryInfections': patient_data['symptoms'].get('recurrentRespiratoryInfections', 0),
+            'Sweating': patient_data['symptoms'].get('sweating', 0),
+            'Confusion': patient_data['symptoms'].get('confusion', 0),
+            'NumbnessOrWeaknessInLegs': patient_data['symptoms'].get('numbnessOrWeaknessInLegs', 0),
+            'ColdnessInLowerLegOrFoot': patient_data['symptoms'].get('coldnessInLowerLegOrFoot', 0),
+            'SoresOrWoundsOnToesFeetOrLegs': patient_data['symptoms'].get('soresOrWoundsOnLegsOrFeet', 0),
+        }
 
-                prepared_data = prepare_patient_data(patient_data)
-                diagnosis_id = model.predict(prepared_data)
-                current_app.logger.info(f"Model predicted diagnosis ID: {diagnosis_id}")
-                diagnosis_name = get_diagnosis_name(diagnosis_id[0])
+        disease, prediction = process_input(symptoms)
+        if disease == 'No disease detected or insufficient data':
+            return jsonify({'error': 'No disease detected or insufficient data'}), 422
 
-                if diagnosis_name != "Unknown Diagnosis":
-                    break
-            else:
-                break
+        current_app.logger.info(f"Disease diagnosed: {disease}")
 
-        if diagnosis_name == "Unknown Diagnosis":
-            diagnosis_name = "Failed Diagnosis"
-
-        current_app.logger.info(f"Diagnosis name retrieved: {diagnosis_name}")
-
+        # Update the database
         result = my_db.patientData.update_one(
             {"_id": ObjectId(patient_id)},
-            {"$set": {"diagnosis": diagnosis_name}}
+            {"$set": {"diagnosis": disease}}
         )
+
         if result.modified_count == 1:
-            send_diagnosis_email(patient_data.get('email', ''), diagnosis_name)
-            current_app.logger.info(f"Database updated and email sent for patient ID: {patient_id}")
-            return jsonify({'diagnosis': diagnosis_name})
-        else:
-            raise Exception("Failed to update the patient's diagnosis in the database.")
+            return jsonify({'diagnosis': disease}), 200
+
+
     except Exception as e:
         current_app.logger.error(f"An error occurred: {e}", exc_info=True)
         return jsonify({'error': 'Internal Server Error', 'message': str(e)}), 500

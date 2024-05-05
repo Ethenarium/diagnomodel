@@ -1,20 +1,17 @@
 import pandas as pd
+from tensorflow.keras.models import load_model
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
-import joblib
+import numpy as np
 
-# Load the model
-model = joblib.load("logistic_regression_model.pkl")
+model = load_model("cad_model.keras")
 
-# Load test data
-test_data = pd.read_csv("patient_data.csv")
+test_data = pd.read_csv("cad.csv")
 X_test = test_data.iloc[:, :-1]
 y_test = test_data.iloc[:, -1]
 
-# Make predictions
 predictions = model.predict(X_test)
-
-# Evaluate the model
+predictions = np.argmax(predictions, axis=1)
 accuracy = accuracy_score(y_test, predictions)
 conf_matrix = confusion_matrix(y_test, predictions)
 class_report = classification_report(y_test, predictions)
