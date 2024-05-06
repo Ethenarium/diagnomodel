@@ -15,6 +15,7 @@ from bson.binary import Binary
 import io
 import base64
 from tensorflow.keras.models import load_model
+import time
 
 app = Flask('app')  # Flask uygulaması oluşturur
 app.secret_key = config('secret')  # Flask uygulamasının gizli anahtarını .env dosyasından ayarlar
@@ -341,17 +342,6 @@ def get_patient_by_name(patient_name):
         return jsonify({'error': str(e)}), 500
 
 
-app.config.update(
-    MAIL_SERVER='smtp.office365.com',
-    MAIL_PORT=587,
-    MAIL_USE_TLS=True,
-    MAIL_USERNAME='anakinskyw0@hotmail.com',
-    MAIL_PASSWORD='Seftali6872++',
-    MAIL_DEFAULT_SENDER='anakinskyw0@hotmail.com'
-)
-
-mail = Mail(app)
-
 def classify_symptoms(symptoms):
     diseases = {
         'Cad': ['ChestPain', 'ShortnessOfBreath', 'Fatigue', 'IrregularHeartbeat', 'ExtremeWeakness', 'BlurredVision'], # CAD
@@ -400,6 +390,7 @@ def process_input(symptoms):
         prediction = model.predict(input_data)
         return disease, prediction[0]
     return 'No disease detected or insufficient data', None
+
 
 @app.route('/diagnose/<string:patient_id>', methods=['POST'])
 def diagnose_patient(patient_id):
@@ -463,20 +454,44 @@ def diagnose_patient(patient_id):
             {"$set": {"diagnosis": disease}}
         )
 
-        if result.modified_count == 1:
-            return jsonify({'diagnosis': disease}), 200
-
+        send_diagnosis_email("testmailaras@gmail.com", disease)
+        return jsonify({'diagnosis': disease}), 200
 
     except Exception as e:
         current_app.logger.error(f"An error occurred: {e}", exc_info=True)
         return jsonify({'error': 'Internal Server Error', 'message': str(e)}), 500
 
 
+app.config.update(
+    MAIL_SERVER='smtp.office365.com',
+    MAIL_PORT=587,
+    MAIL_USE_TLS=True,
+    MAIL_USERNAME='anakinskyw0@hotmail.com',
+    MAIL_PASSWORD='Seftali6872++',
+    MAIL_DEFAULT_SENDER='anakinskyw0@hotmail.com'
+)
+
+mail = Mail(app)
+
+
 def send_diagnosis_email(email, diagnosis):
     msg = Message("Your Diagnosis Result",
                   recipients=[email])
-    msg.body = f"Dear Patient,\n\nYour diagnosis result is: {diagnosis}.\nPlease consult with your physician for further advice.\n\nBest regards,\nMedical Team"
-    mail.send(msg)
+    msg.body = (f"Dear Patient,\n\nYour diagnosis result is: {diagnosis}."
+                f"\nPlease come back for the check as soon as possible.\n"
+                f"\nPlease consult with your physician for further advice.\n\nBest regards,\nMedical Team")
+
+    retries = 3
+    for attempt in range(retries):
+        try:
+            mail.send(msg)
+            print("Email sent successfully")
+            return
+        except Exception as e:
+            wait = 2 ** attempt
+            print(f"Failed to send email, retrying in {wait} seconds...")
+            time.sleep(wait)
+    print("Failed to send email after several attempts.")
 
 
 if __name__ == '__main__':
