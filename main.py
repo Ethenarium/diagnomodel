@@ -446,9 +446,9 @@ app.config.update(
     MAIL_SERVER='smtp.office365.com',
     MAIL_PORT=587,
     MAIL_USE_TLS=True,
-    MAIL_USERNAME='erberk_38_1@hotmail.com',
-    MAIL_PASSWORD='Bankai6872Seftali++',
-    MAIL_DEFAULT_SENDER='erberk_38_1@hotmail.com'
+    MAIL_USERNAME='anakinskyw0@hotmail.com',
+    MAIL_PASSWORD='Seftali6872++',
+    MAIL_DEFAULT_SENDER='anakinskyw0@hotmail.com'
 )
 
 mail = Mail(app)
