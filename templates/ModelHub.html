@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ModelHub</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+<div class="container mt-5">
+    <div class="d-flex justify-content-between mb-3">
+        <h1>ModelHub</h1>
+        <button class="btn btn-primary" onclick="document.getElementById('uploadModel').style.display='block'">Upload Model</button>
+    </div>
+
+    <div id="uploadModel" style="display: none;">
+        <h2>Upload a new model</h2>
+        <form action="/upload_model" method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="modelName" class="form-label">Model Name:</label>
+                <input type="text" class="form-control" id="modelName" name="modelName" required>
+            </div>
+            <div class="mb-3">
+                <label for="modelFile" class="form-label">Model File:</label>
+                <input type="file" class="form-control" id="modelFile" name="modelFile" accept=".keras" required>
+            </div>
+            <button type="submit" class="btn btn-success">Upload</button>
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('uploadModel').style.display='none'">Cancel</button>
+        </form>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Model Name</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="modelList">
+            <!-- Model rows will be inserted here by JavaScript -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+$(document).ready(function() {
+    loadModels();
+
+    function loadModels() {
+        // This should ideally fetch from your server using an API endpoint that returns JSON.
+        const models = [
+            {name: "Angina Pectoris Model", file: "angina_pectoris_model.keras"},
+            // Add more models here
+        ];
+
+        let modelHtml = '';
+        models.forEach(function(model) {
+            modelHtml += `
+                <tr>
+                    <td>${model.name}</td>
+                    <td><button class="btn btn-link" onclick="downloadModel('${model.file}')">Download</button></td>
+                </tr>
+            `;
+        });
+        $('#modelList').html(modelHtml);
+    }
+
+    window.downloadModel = function(file) {
+        window.location.href = '/download_model/' + file;
+    }
+});
+</script>
+</body>
+</html>

@@ -113,30 +113,6 @@ def prepare_patient_data(patient_data):
     return features_df
 
 
-def get_diagnosis_name(diagnosis_id):
-    diagnosis_map = {
-        1: "CAD",
-        2: "Heart Attack",
-        3: "Heart Failure",
-        4: "Arrhythmias",
-        5: "Hypertension",
-        6: "Atherosclerosis",
-        7: "Angina Pectoris",
-        8: "Endocarditis",
-        9: "Valvular Heart Disease",
-        10: "Pericarditis",
-        11: "Cardiomyopathy",
-        12: "Congenital Heart Defects",
-        13: "Pulmonary Embolism",
-        14: "Cardiac Arrest",
-        15: "Cardiogenic Shock",
-        16: "Rheumatic Heart Disease",
-        17: "Heart Valve Regurgitation",
-        18: "Heart Valve Stenosis",
-        19: "Heart Murmur",
-        20: "Peripheral Artery Disease (PAD)"
-    }
-    return diagnosis_map.get(diagnosis_id, "Unknown Diagnosis")
 
 
 def my_log(action, message, user_name):
@@ -191,6 +167,12 @@ def data_table():
 @login_required
 def index():
     return render_template('main.html')
+
+
+@app.route('/modelhub')
+@login_required
+def modelhub():
+    return render_template('ModelHub.html')
 
 
 @app.route('/ref')
@@ -396,8 +378,8 @@ def process_input(symptoms):
 def diagnose_patient(patient_id):
     try:
         current_app.logger.info(f"Diagnosing patient with ID: {patient_id}")
-
         patient_data = get_patient_data(patient_id)
+        patient_email = patient_data.get('email')
         if not patient_data:
             return jsonify({'error': 'Patient not found'}), 404
 
@@ -448,13 +430,11 @@ def diagnose_patient(patient_id):
 
         current_app.logger.info(f"Disease diagnosed: {disease}")
 
-        # Update the database
         result = my_db.patientData.update_one(
             {"_id": ObjectId(patient_id)},
             {"$set": {"diagnosis": disease}}
         )
-
-        send_diagnosis_email("testmailaras@gmail.com", disease)
+        send_diagnosis_email(patient_email)
         return jsonify({'diagnosis': disease}), 200
 
     except Exception as e:
@@ -474,14 +454,14 @@ app.config.update(
 mail = Mail(app)
 
 
-def send_diagnosis_email(email, diagnosis):
-    msg = Message("Your Diagnosis Result",
+def send_diagnosis_email(email):
+    msg = Message("Teşhis Sonuçlarınız",
                   recipients=[email])
-    msg.body = (f"Dear Patient,\n\nYour diagnosis result is: {diagnosis}."
-                f"\nPlease come back for the check as soon as possible.\n"
-                f"\nPlease consult with your physician for further advice.\n\nBest regards,\nMedical Team")
+    msg.body = (f"Iyi Günler,"
+                f"\nTeşhis sonuçlarınız çıkmıştır, lütfen en kısa sürede hastanemize gerekli tedavi için başvurunuz.\n"
+                f"\nSaygılarımızla, Falanfilan hastanesi")
 
-    retries = 3
+    retries = 1
     for attempt in range(retries):
         try:
             mail.send(msg)
