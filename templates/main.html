@@ -2,25 +2,24 @@
 {% block title %}Patient Data Submission{% endblock %}
 {% block head %}
 {{ super() }}
-<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
 <style type="text/css">
     body {
-        background: #f5f5f5;
+        background: #f9f9f9; /* Genel arka plan rengi */
+        font-family: 'Roboto', sans-serif; /* Genel yazı tipi */
     }
     .container {
         margin-top: 20px;
         margin-bottom: 20px;
         width: 800px;
         background: white;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Hafif gölge */
         transition: box-shadow 0.3s ease-in-out;
-        border-radius: 8px;
+        border-radius: 15px; /* Köşeleri yuvarlat */
         overflow: hidden;
     }
     .container:hover {
-        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
     }
 
     .newData {
@@ -32,7 +31,7 @@
         cursor: pointer;
         transition: all 0.3s ease-in-out;
         font-size: 14px;
-        background-color: #50C4ED; /* Change the background color */
+        background-color: #50C4ED; /* Mavi arka plan */
     }
 
     .newData:hover {
@@ -54,7 +53,7 @@
         cursor: pointer;
         transition: all 0.3s ease-in-out;
         font-size: 14px;
-        background-color: #527853; /* Change the background color */
+        background-color: #527853; /* Yeşil arka plan */
     }
 
     .btn-group-toggle .btn:hover {
@@ -69,7 +68,6 @@
         border: none;
         background-color: #114232 !important;  /* Butona basıldığında rengi değiştir */
     }
-
 
     .modal-dialog {
         max-width: 800px; /* Modalın genişliğini artır */
@@ -89,7 +87,7 @@
         cursor: pointer;
         transition: all 0.3s ease-in-out;
         font-size: 14px;
-        background-color: #31304D;
+        background-color: #31304D; /* Koyu arka plan */
         text-align: center;
     }
 
@@ -103,7 +101,7 @@
          transform: scale(0.9);
     }
 
-    #file-chosen {
+    #file-chosen, #image-chosen {
         margin-left: 10px;
         font-style: italic;
     }
@@ -134,6 +132,75 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
+
+    h2.text-center {
+        color: #4D869C;
+        margin-bottom: 15px;
+        font-size: 24px;
+        text-align: center;
+        position: relative;
+    }
+
+    h2.text-center::after {
+        content: '';
+        display: block;
+        width: 230px;
+        height: 3px;
+        background-color: #4D869C;
+        margin: 10px auto 0;
+        border-radius: 5px;
+    }
+
+    .modal-content {
+        border-radius: 10px;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        border: none;
+    }
+
+    .modal-header {
+        background-color: #77B0AA; /* Light teal */
+        color: white;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+        padding: 16px 24px;
+    }
+
+    .modal-body {
+        padding: 20px;
+        background-color: white;
+        color: #333;
+    }
+
+    .modal-footer {
+        padding: 12px 24px;
+        background-color: #f7f7f7;
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+        justify-content: flex-end;
+    }
+
+    .modal-footer .btn-secondary {
+        background-color: #6c757d;
+    }
+
+    .modal-footer .btn-primary {
+        background-color: #5e948c;
+    }
+
+    .modal-footer .btn-secondary:hover,
+    .modal-footer .btn-primary:hover {
+        background-color: #4d867b;
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+
+    .form-group label {
+        min-width: 190px; /* Etiketlerin genişliğini sabitle */
+        display: inline-block; /* Etiketleri blok olarak ayarla */
+        font-size: 16px; /* Yazı tipi boyutunu artır */
+        font-weight: bold; /* Yazıları kalınlaştır */
+        color: #333; /* Daha koyu renk */
+    }
 </style>
 <script>
     // BMI hesaplama işlevi
@@ -155,84 +222,47 @@
     });
 
     function saveSymptoms() {
-        // Semptomların seviyelerini al
-        var smoke = parseFloat($('input[name="smoke"]:checked').val());
-        var drinker = parseFloat($('input[name="drinker"]:checked').val());
-        var headache = parseFloat($('input[name="headache"]:checked').val());
-        var chestPain = parseFloat($('input[name="chestPain"]:checked').val());
-        var shortnessOfBreath = parseFloat($('input[name="shortnessOfBreath"]:checked').val());
-        var fatigue = parseFloat($('input[name="fatigue"]:checked').val());
-        var fever = parseFloat($('input[name="fever"]:checked').val());
-        var dizziness = parseFloat($('input[name="dizziness"]:checked').val());
-        var swelling = parseFloat($('input[name="swelling"]:checked').val());
-        var irregularHeartbeat = parseFloat($('input[name="irregularHeartbeat"]:checked').val());
-        var nauseaOrVomit = parseFloat($('input[name="nauseaOrVomit"]:checked').val());
-        var coldSweats = parseFloat($('input[name="coldSweats"]:checked').val());
-        var indigestionOrHeartburn = parseFloat($('input[name="indigestionOrHeartburn"]:checked').val());
-        var painToArm = parseFloat($('input[name="painToArm"]:checked').val());
-        var jawPain = parseFloat($('input[name="jawPain"]:checked').val());
-        var backPain = parseFloat($('input[name="backPain"]:checked').val());
-        var fainting = parseFloat($('input[name="fainting"]:checked').val());
-        var persistentCough = parseFloat($('input[name="persistentCough"]:checked').val());
-        var difficultySleeping = parseFloat($('input[name="difficultySleeping"]:checked').val());
-        var suddenWeightGain = parseFloat($('input[name="suddenWeightGain"]:checked').val());
-        var rapidOrIrregularPulse = parseFloat($('input[name="rapidOrIrregularPulse"]:checked').val());
-        var extremeWeakness = parseFloat($('input[name="extremeWeakness"]:checked').val());
-        var lossOfConsciousness = parseFloat($('input[name="lossOfConsciousness"]:checked').val());
-        var blurredVision = parseFloat($('input[name="blurredVision"]:checked').val());
-        var legPain = parseFloat($('input[name="legPain"]:checked').val());
-        var numbnessInLimbs = parseFloat($('input[name="numbnessInLimbs"]:checked').val());
-        var coldLimbs = parseFloat($('input[name="coldLimbs"]:checked').val());
-        var cyanosis = parseFloat($('input[name="cyanosis"]:checked').val());
-        var poorGrowthInInfants = parseFloat($('input[name="poorGrowthInInfants"]:checked').val());
-        var recurrentRespiratoryInfections = parseFloat($('input[name="recurrentRespiratoryInfections"]:checked').val());
-        var sweating = parseFloat($('input[name="sweating"]:checked').val());
-        var confusion = parseFloat($('input[name="confusion"]:checked').val());
-        var numbnessOrWeaknessInLegs = parseFloat($('input[name="numbnessOrWeaknessInLegs"]:checked').val());
-        var coldnessInLowerLegOrFoot = parseFloat($('input[name="coldnessInLowerLegOrFoot"]:checked').val());
-        var soresOrWoundsOnLegsOrFeet = parseFloat($('input[name="soresOrWoundsOnLegsOrFeet"]:checked').val());
-
-        // Semptom verilerini bir objeye yerleştir
+        // Form verilerini topla ve eğer semptom değeri seçilmemişse 0 olarak kaydet
         var symptomsData = {
-            smoke: smoke,
-            drinker: drinker,
-            headache: headache,
-            chestPain: chestPain,
-            shortnessOfBreath: shortnessOfBreath,
-            fatigue: fatigue,
-            fever: fever,
-            dizziness: dizziness,
-            swelling: swelling,
-            irregularHeartbeat: irregularHeartbeat,
-            nauseaOrVomit: nauseaOrVomit,
-            coldSweats: coldSweats,
-            indigestionOrHeartburn: indigestionOrHeartburn,
-            painToArm: painToArm,
-            jawPain: jawPain,
-            backPain: backPain,
-            fainting: fainting,
-            persistentCough: persistentCough,
-            difficultySleeping: difficultySleeping,
-            suddenWeightGain: suddenWeightGain,
-            rapidOrIrregularPulse: rapidOrIrregularPulse,
-            extremeWeakness: extremeWeakness,
-            lossOfConsciousness: lossOfConsciousness,
-            blurredVision: blurredVision,
-            legPain: legPain,
-            numbnessInLimbs: numbnessInLimbs,
-            coldLimbs: coldLimbs,
-            cyanosis: cyanosis,
-            poorGrowthInInfants: poorGrowthInInfants,
-            recurrentRespiratoryInfections: recurrentRespiratoryInfections,
-            sweating: sweating,
-            confusion: confusion,
-            numbnessOrWeaknessInLegs: numbnessOrWeaknessInLegs,
-            coldnessInLowerLegOrFoot: coldnessInLowerLegOrFoot,
-            soresOrWoundsOnLegsOrFeet: soresOrWoundsOnLegsOrFeet
-            // Diğer semptomlar buraya eklenebilir
+            smoke: parseFloat($('input[name="smoke"]:checked').val() || 0),
+            drinker: parseFloat($('input[name="drinker"]:checked').val() || 0),
+            headache: parseFloat($('input[name="headache"]:checked').val() || 0),
+            chestPain: parseFloat($('input[name="chestPain"]:checked').val() || 0),
+            shortnessOfBreath: parseFloat($('input[name="shortnessOfBreath"]:checked').val() || 0),
+            fatigue: parseFloat($('input[name="fatigue"]:checked').val() || 0),
+            fever: parseFloat($('input[name="fever"]:checked').val() || 0),
+            dizziness: parseFloat($('input[name="dizziness"]:checked').val() || 0),
+            palpitation: parseFloat($('input[name="palpitation"]:checked').val() || 0),
+            swelling: parseFloat($('input[name="swelling"]:checked').val() || 0),
+            irregularHeartbeat: parseFloat($('input[name="irregularHeartbeat"]:checked').val() || 0),
+            nauseaOrVomit: parseFloat($('input[name="nauseaOrVomit"]:checked').val() || 0),
+            coldSweats: parseFloat($('input[name="coldSweats"]:checked').val() || 0),
+            indigestionOrHeartburn: parseFloat($('input[name="indigestionOrHeartburn"]:checked').val() || 0),
+            painToArm: parseFloat($('input[name="painToArm"]:checked').val() || 0),
+            jawPain: parseFloat($('input[name="jawPain"]:checked').val() || 0),
+            backPain: parseFloat($('input[name="backPain"]:checked').val() || 0),
+            fainting: parseFloat($('input[name="fainting"]:checked').val() || 0),
+            persistentCough: parseFloat($('input[name="persistentCough"]:checked').val() || 0),
+            difficultySleeping: parseFloat($('input[name="difficultySleeping"]:checked').val() || 0),
+            suddenWeightGain: parseFloat($('input[name="suddenWeightGain"]:checked').val() || 0),
+            rapidOrIrregularPulse: parseFloat($('input[name="rapidOrIrregularPulse"]:checked').val() || 0),
+            extremeWeakness: parseFloat($('input[name="extremeWeakness"]:checked').val() || 0),
+            lossOfConsciousness: parseFloat($('input[name="lossOfConsciousness"]:checked').val() || 0),
+            blurredVision: parseFloat($('input[name="blurredVision"]:checked').val() || 0),
+            legPain: parseFloat($('input[name="legPain"]:checked').val() || 0),
+            numbnessInLimbs: parseFloat($('input[name="numbnessInLimbs"]:checked').val() || 0),
+            coldLimbs: parseFloat($('input[name="coldLimbs"]:checked').val() || 0),
+            cyanosis: parseFloat($('input[name="cyanosis"]:checked').val() || 0),
+            poorGrowthInInfants: parseFloat($('input[name="poorGrowthInInfants"]:checked').val() || 0),
+            recurrentRespiratoryInfections: parseFloat($('input[name="recurrentRespiratoryInfections"]:checked').val() || 0),
+            sweating: parseFloat($('input[name="sweating"]:checked').val() || 0),
+            confusion: parseFloat($('input[name="confusion"]:checked').val() || 0),
+            numbnessOrWeaknessInLegs: parseFloat($('input[name="numbnessOrWeaknessInLegs"]:checked').val() || 0),
+            coldnessInLowerLegOrFoot: parseFloat($('input[name="coldnessInLowerLegOrFoot"]:checked').val() || 0),
+            soresOrWoundsOnLegsOrFeet: parseFloat($('input[name="soresOrWoundsOnLegsOrFeet"]:checked').val() || 0)
         };
 
-        // Semptom verilerini form verisine ekleyin
+        // Semptom verilerini form verisine JSON formatında ekleyin
         var symptomsInput = document.createElement('input');
         symptomsInput.setAttribute('type', 'hidden');
         symptomsInput.setAttribute('name', 'symptoms');
@@ -244,6 +274,7 @@
         $('body').removeClass('modal-open');
         $('.modal-backdrop').remove();
     }
+
 
     $(document).ready(function() {
         $('#bloodValues').on('change', function() {
@@ -311,10 +342,12 @@
                         <input type="text" class="form-control" name="name" id="name" required>
                     </div>
 
-                    <div style="margin-top: 25px;" class="form-group">
-                        <label for="patientImage" class="file-upload-btn">Upload Image</label>
-                        <input type="file" class="form-control-file" name="patientImage" id="patientImage" accept="image/*" style="display: none;">
-                        <span id="image-chosen">No Image Chosen</span>
+                    <div class="form-row">
+                        <div class="col">
+                            <label for="patientImage" class="file-upload-btn">Upload Image</label>
+                            <input type="file" class="form-control-file" name="patientImage" id="patientImage" accept="image/*" style="display: none;">
+                            <span id="image-chosen">No Image Chosen</span>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -322,7 +355,8 @@
                         <input type="email" class="form-control" name="email" id="email" required placeholder="example@example.com">
                     </div>
 
-                    <div class="form-row">
+                    <div class="form-group">
+                        <div class="form-row">
                         <div class="col">
                             <label for="age">Age:</label>
                             <input type="number" class="form-control" name="age" id="age" required>
@@ -339,7 +373,10 @@
                         </div>
 
                     </div>
-                    <div class="form-row">
+                    </div>
+
+                    <div class="form-group">
+                        <div class="form-row">
                         <div class="col">
                             <label for="weight">Weight (kg):</label>
                             <input type="number" class="form-control" name="weight" id="weight" step="0.1" required>
@@ -349,10 +386,13 @@
                             <input type="number" class="form-control" name="height" id="height" step="0.1" required>
                         </div>
                     </div>
+                    </div>
+
                     <div class="form-group">
                         <label for="bmi">BMI:</label>
                         <input disabled type="number" class="form-control" name="bmi" id="bmi" step="0.1" required>
                     </div>
+
                     <div class="form-group">
                         <div class="form-row">
                             <button type="button" class="file-upload-btn" data-toggle="modal" data-target="#symptomModal" id="symptomButton">Select Symptoms</button>
@@ -362,20 +402,23 @@
                         <label for="familyHistory">Family History:</label>
                         <input type="text" class="form-control" name="familyHistory" id="familyHistory">
                     </div>
-                    <div class="form-row">
-                        <div class="col">
-                            <label for="bloodPressureMin">Blood Pressure Min:</label>
-                            <input type="number" class="form-control" name="bloodPressureMin" id="bloodPressureMin">
-                        </div>
-                        <div class="col">
-                            <label for="bloodPressureMax">Blood Pressure Max:</label>
-                            <input type="number" class="form-control" name="bloodPressureMax" id="bloodPressureMax">
+
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="col">
+                                <label for="bloodPressureMin">Blood Pressure Min:</label>
+                                <input type="number" class="form-control" name="bloodPressureMin" id="bloodPressureMin">
+                            </div>
+                            <div class="col">
+                                <label for="bloodPressureMax">Blood Pressure Max:</label>
+                                <input type="number" class="form-control" name="bloodPressureMax" id="bloodPressureMax">
+                            </div>
                         </div>
                     </div>
 
-                    <div style="margin-top: 20px;" class="form-row">
+                    <div style="margin-top: 10px;" class="form-row">
                         <div class="col">
-                            <label for="bloodValues" class="file-upload-btn">Choose File</label>
+                            <label for="bloodValues" class="file-upload-btn">Blood Values</label>
                             <input type="file" class="form-control-file" name="bloodValues" id="bloodValues" accept=".xlsx" style="display: none;">
                             <span id="file-chosen">No File Chosen</span>
                         </div>

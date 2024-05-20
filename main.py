@@ -2,7 +2,7 @@ from datetime import datetime
 import functools
 import os
 import numpy as np
-from flask import Flask, redirect, render_template, request, session, url_for, jsonify, current_app, Response
+from flask import Flask, redirect, render_template, request, session, url_for, jsonify, current_app, Response, flash
 from werkzeug.utils import secure_filename
 import pymongo
 from decouple import config
@@ -113,8 +113,6 @@ def prepare_patient_data(patient_data):
     return features_df
 
 
-
-
 def my_log(action, message, user_name):
     log_id = get_sequence("log")
     return my_db.logs.insert_one({
@@ -135,6 +133,12 @@ def my_logon(username, password):
         return None
 
 
+@app.route('/logout')
+def logout():
+    session.clear()  # Clears all data in the session
+    return redirect(url_for('login'))
+
+
 def login_required(route):
     @functools.wraps(route)
     def route_wrapper(*args, **kwargs):
@@ -153,8 +157,47 @@ def login():
         if user_info:
             return redirect(url_for("index"))
         else:
-            return render_template("login.html", error="Invalid username or password")
+            flash("Invalid username or password", "error")
+            return redirect(url_for("login"))
     return render_template("login.html")
+
+
+@app.route('/dashboard')
+def dashboard():
+    # Fetch total number of patients
+    total_patients = my_db.patientData.count_documents({})
+
+    # Fetch recent diagnoses with patient names, limit to the last 5
+    recent_patients_cursor = my_db.patientData.find({}, {'name': 1, 'diagnosis': 1}).sort("date_diagnosed", -1).limit(5)
+    recent_patients = [patient for patient in recent_patients_cursor]
+
+    # Fetch patient counts over time
+    pipeline = [
+        {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$date_added"}}, "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}
+    ]
+    patient_counts = list(my_db.patientData.aggregate(pipeline))
+
+    # Sample model performance data for visualization
+    model_performance = {
+        'angina_pectoris': {'accuracy': 0.95, 'recall': 0.92},
+        'arrhythmias': {'accuracy': 0.89, 'recall': 0.90},
+    }
+
+    return render_template('dashboard.html', total_patients=total_patients,
+                           recent_patients=recent_patients,
+                           patient_counts=patient_counts,
+                           model_performance=model_performance)
+
+
+@app.route('/patient_details/<string:patient_id>')
+@login_required
+def patient_details(patient_id):
+    patient = my_db.patientData.find_one({"_id": ObjectId(patient_id)})
+    if patient:
+        return render_template('patient_details.html', patient=patient)
+    else:
+        return 'Patient not found', 404
 
 
 @app.route('/dataTable')
@@ -208,6 +251,7 @@ def submit():
         "familyHistory": request.form.get("familyHistory", "None"),  # Default value if not provided
         "bloodPressureMin": bloodPressureMin,
         "bloodPressureMax": bloodPressureMax,
+        "date_added": datetime.now(),
         "blood_values": [],
         "symptoms": [
 

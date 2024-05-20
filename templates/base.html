@@ -5,10 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Diagnosis Tool{% endblock %}</title>
     <!-- Bootstrap ve diğer kütüphanelerin CSS ve JS dosyaları -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+
+
     <style type="text/css">
         @keyframes gradientAnimation {
             0% {
@@ -24,9 +34,9 @@
 
         .nav-link {
             position: relative;
-            color: #000; /* Initial color */
+            color: #fff; /* Initial color */
             text-decoration: none; /* Optional: if it's a link */
-            transition: color 0.3s ease-in-out;
+            transition: color 0.3s ease-in-out, transform 0.3s ease-in-out;
             font-weight: 500;
         }
 
@@ -35,45 +45,177 @@
             position: absolute;
             width: 0;
             height: 2px;
-            bottom: 0;
+            bottom: -3px;
             left: 0;
-            background-color: #77B0AA; /* Color of the bar */
+            background-color: #fff; /* Color of the bar */
             transition: width 0.3s ease-in-out;
         }
 
         .nav-link:hover, .nav-link:focus {
             color: #ffd700; /* Color when hovered/focused */
+            transform: scale(1.1);
         }
 
         .nav-link:hover::after, .nav-link:focus::after {
             width: 100%;
         }
 
+        .nav-item.active .nav-link {
+            color: #ffd700; /* Color for active link */
+            transform: scale(1.2);
+        }
+
+        .nav-item.active .nav-link::after {
+            width: 100%;
+            left: 0;
+            background-color: #ffd700;
+        }
+
+        .custom-profile-dropdown .dropdown-menu {
+            display: none;  /* Ensures that the dropdown does not display until activated */
+        }
+
+        .custom-profile-dropdown:hover .dropdown-menu,
+        .custom-profile-dropdown .dropdown-toggle:focus + .dropdown-menu {
+            display: block;  /* Show dropdown on hover or focus */
+        }
+
+        .custom-profile-dropdown .dropdown-toggle::after {
+            display: none;  /* Remove the default arrow if it doesn't fit your design */
+        }
+
+        /* Optional: Specific styling for the dropdown items to ensure they are distinct from other navbar items */
+        .custom-profile-dropdown .dropdown-item {
+            color: #333;  /* Dark text color for readability */
+            background-color: transparent;  /* No background color change on hover to keep it minimal */
+        }
+
+        .custom-profile-dropdown .dropdown-item:hover,
+        .custom-profile-dropdown .dropdown-item:focus {
+            background-color: #f8f9fa;  /* Slight background color on hover or focus for interaction feedback */
+        }
+
+        /* General Styling */
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(90deg, rgba(119,176,170,1) 0%, rgba(119,176,170,1) 50%, rgba(71,150,130,1) 100%);
+            animation: gradientAnimation 15s ease infinite;
+            background-size: 200% 200%;
+        }
+
+        .navbar-brand {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            background-color: rgba(255, 255, 255, 0.7); /* Light transparent background */
+            border-radius: 50px;
+        }
+
+        .navbar-brand img {
+            margin-left: 3px;
+            height: 45px; /* Resize logo */
+        }
+
+        .nav-item {
+            margin: 0 10px;
+        }
+
+        .nav-link {
+            font-size: 16px;
+            color: #fff !important; /* White color for nav links */
+        }
+
+        .nav-link i {
+            margin-right: 8px;
+        }
+
+        .dropdown-menu {
+            background-color: #77B0AA;
+            border: none;
+        }
+
+        .dropdown-menu .dropdown-item {
+            color: #fff;
+        }
+
+        .dropdown-menu .dropdown-item:hover {
+            background-color: #5e948c;
+        }
+
+        .custom-profile-dropdown .dropdown-toggle {
+            color: #fff !important;
+        }
+
+        /* Profile Icon */
+        .profile-icon {
+            margin-bottom: 3px;
+        }
+
+        /* Adjust spacing for different screen sizes */
+        @media (max-width: 992px) {
+            .navbar-nav {
+                text-align: center;
+            }
+
+            .nav-item {
+                margin: 5px 0;
+            }
+        }
+
+        .navbar-title {
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+        }
     </style>
     {% block head %}{% endblock %}
 </head>
 <body>
     <!-- Navigasyon çubuğu -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light" style="height: 60px;">
-        <a class="navbar-brand" href="#">
-            <img src="{{ url_for('static', filename='logoHealth.png') }}" alt="Health App Logo" height="50">
+        <a style="margin-left: 10px;" class="navbar-brand" href="#">
+            <img src="{{ url_for('static', filename='logoHealth.png') }}" alt="Health App Logo">
         </a>
+        <span class="navbar-title">Vital Verse</span>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+        <div class="collapse navbar-collapse justify-content-center" id="navbarNavAltMarkup">
             <div class="navbar-nav">
-                <!-- Navigasyon linkleri -->
-                <a class="nav-item nav-link active" href="/">New Data <span class="sr-only">(current)</span></a>
-                <a class="nav-item nav-link active" href="/dataTable">Data <span class="sr-only">(current)</span></a>
-                <a class="nav-item nav-link active" href="/ref">Referance Value <span class="sr-only">(current)</span></a>
-                <a class="nav-item nav-link active" href="/modelhub">ModelHub <span class="sr-only">(current)</span></a>
+                <a class="nav-item nav-link" href="/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a class="nav-item nav-link" href="/"><i class="fas fa-plus"></i>New Data</a>
+                <a class="nav-item nav-link" href="/dataTable"><i class="fas fa-table"></i>Data Table</a>
+                <a class="nav-item nav-link" href="/ref"><i class="fas fa-list-ul"></i> Reference Value</a>
+                <a class="nav-item nav-link" href="/modelhub"><i class="fas fa-cogs"></i> Model Hub</a>
             </div>
         </div>
+        <!-- Profile Icon and Logout Dropdown -->
+        <div class="navbar-nav ml-auto">
+                <a style="margin-left: 10px; text-decoration: none; color: #FFFFFF" class=" dropdown-toggle" href="#" id="customNavbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                   <svg style="margin-bottom: 5px; margin-right: 3px;" xmlns="http://www.w3.org/2000/svg" height="30px" viewBox="0 -960 960 960" width="30px" fill="#FFFFFF"><path d="M160-80q-33 0-56.5-23.5T80-160v-440q0-33 23.5-56.5T160-680h200v-120q0-33 23.5-56.5T440-880h80q33 0 56.5 23.5T600-800v120h200q33 0 56.5 23.5T880-600v440q0 33-23.5 56.5T800-80H160Zm0-80h640v-440H600q0 33-23.5 56.5T520-520h-80q-33 0-56.5-23.5T360-600H160v440Zm80-80h240v-18q0-17-9.5-31.5T444-312q-20-9-40.5-13.5T360-330q-23 0-43.5 4.5T276-312q-17 8-26.5 22.5T240-258v18Zm320-60h160v-60H560v60Zm-200-60q25 0 42.5-17.5T420-420q0-25-17.5-42.5T360-480q-25 0-42.5 17.5T300-420q0 25 17.5 42.5T360-360Zm200-60h160v-60H560v60ZM440-600h80v-200h-80v200Zm40 220Z"/></svg>
+                    {{ session['user_info']['full_name'] if session.get('user_info') else 'Guest' }}
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="customNavbarDropdown">
+                    <a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                </div>
+        </div>
+
     </nav>
 
     <div class="container">
         {% block content %}{% endblock %}
     </div>
+
+    <script>
+        $(document).ready(function() {
+            var path = window.location.pathname;
+            $('.nav-link').each(function() {
+                if ($(this).attr('href') === path) {
+                    $(this).parent().addClass('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

@@ -1,32 +1,349 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ModelHub</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-</head>
-<body>
-<div class="container mt-5">
+{% extends "base.html" %}
+{% block title %}Model Hub{% endblock %}
+{% block head %}
+{{ super() }}
+
+<style type="text/css">
+    .container {
+        margin-top: 50px;
+    }
+
+    h1 {
+        color: #4D869C;
+        margin-bottom: 20px;
+        font-size: 32px;
+        text-align: center;
+        position: relative;
+    }
+
+    h1::after {
+        content: '';
+        display: block;
+        width: 230px;
+        height: 3px;
+        background-color: #4D869C;
+        margin: 10px auto 0;
+        border-radius: 5px;
+    }
+
+    .custom-link {
+        color: black;
+        text-decoration: none;
+        font-size: 16px;
+        transition: color 0.3s ease, transform 0.3s ease;
+    }
+
+    .custom-link:hover {
+        color: black;
+        transform: scale(1.05);
+    }
+
+    table {
+        width: 100%;
+        margin-top: 20px;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        animation: fadeInUp 0.5s;
+    }
+
+    th, td {
+        color: black;
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        font-size: 16px;
+        text-align: center;
+        justify-content: center;
+        align-items: center;
+    }
+
+    th {
+        background-color: #77B0AA;
+        color: #fff;
+    }
+
+    tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    #uploadModel {
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-top: 20px;
+        display: none;
+    }
+
+    #uploadModel h2 {
+        color: #4D869C;
+        font-size: 24px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    #uploadModel .form-label {
+        font-weight: bold;
+    }
+
+    .custom-success-button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .custom-success-button:hover {
+        background-color: #218838;
+        transform: scale(1.05);
+    }
+
+    .custom-secondary-button {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .custom-secondary-button:hover {
+        background-color: #5a6268;
+        transform: scale(1.05);
+    }
+
+    .custom-file-input-wrapper {
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+    }
+
+    .custom-file-input {
+        font-size: 16px;
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .custom-file-label {
+        background-color: #4D869C;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        display: inline-block;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .custom-file-label:hover {
+        background-color: #3a6c78;
+        transform: scale(1.05);
+    }
+
+    #loader {
+        display: block;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 150px;
+        height: 150px;
+        margin: -75px 0 0 -75px;
+        border-radius: 50%;
+        border: 3px solid transparent;
+        border-top-color: #1A4D2E;
+        animation: spin 2s linear infinite;
+    }
+
+    #loader:before {
+        content: "";
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        right: 5px;
+        bottom: 5px;
+        border-radius: 50%;
+        border: 3px solid transparent;
+        border-top-color: #4F6F52;
+        animation: spin 3s linear infinite;
+    }
+
+    #loader:after {
+        content: "";
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        right: 15px;
+        bottom: 15px;
+        border-radius: 50%;
+        border: 3px solid transparent;
+        border-top-color: #E8DFCA;
+        animation: spin 1.5s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .file-upload-btn {
+        border-radius: 10px;
+        padding: 6px 12px;
+        color: white;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease-in-out;
+        font-size: 14px;
+        background-color: #31304D;
+        text-align: center;
+    }
+
+    .file-upload-btn:hover {
+        background-color: #B6BBC4;
+        transform: scale(1.1);
+    }
+
+    .file-upload-btn:active {
+         background-color: #161A30;
+         transform: scale(0.9);
+    }
+
+    .downloadExcel, .printButton, .modelUpload {
+        border-radius: 10px;
+        padding: 8px 16px;
+        color: white;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease-in-out;
+        font-size: 14px;
+    }
+
+    .downloadExcel {
+        background-color: #82CD47;
+    }
+
+    .downloadExcel:hover {
+        background-color: #54B435;
+        transform: scale(1.1);
+    }
+
+    .downloadExcel:active {
+        background-color: #3e8e41;
+        transform: scale(0.9);
+    }
+
+    .printButton {
+        background-color: #9E9FA5; /* Change the background color */
+    }
+
+    .printButton:hover {
+        background-color: #61677A;
+        transform: scale(1.1);
+    }
+
+    .printButton:active {
+        background-color: #0056b3;
+        transform: scale(0.9);
+    }
+
+    .modelUpload {
+        height: 50px;
+        background-color: #4D869C; /* Change the background color */
+    }
+
+    .modelUpload:hover {
+        background-color: #3a6c78;
+        transform: scale(1.1);
+    }
+
+    .modelUpload:active {
+        background-color: #3a6c78;
+        transform: scale(0.9);
+    }
+</style>
+
+<script>
+    $(document).ready(function() {
+        loadModels();
+
+        function loadModels() {
+            const models = [
+                {name: "Angina Pectoris Model", file: "angina_pectoris_model.keras"},
+                // Add more models here
+            ];
+
+            let modelHtml = '';
+            models.forEach(function(model) {
+                modelHtml += `
+                    <tr>
+                        <td>${model.name}</td>
+                        <td><a style="text-decoration: none;" class="custom-link" href="#" onclick="downloadModel('${model.file}')"><svg style="margin-right: 3px; margin-bottom: 2px;" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000"><path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg>Download</a></td>
+                    </tr>
+                `;
+            });
+            $('#modelList').html(modelHtml);
+        }
+
+        window.downloadModel = function(file) {
+            window.location.href = '/download_model/' + file;
+        }
+
+        window.toggleUploadModal = function() {
+            var uploadModel = document.getElementById('uploadModel');
+            if (uploadModel.style.display === 'block') {
+                uploadModel.style.display = 'none';
+            } else {
+                uploadModel.style.display = 'block';
+            }
+        }
+    });
+</script>
+
+{% endblock %}
+
+{% block content %}
+<div class="container">
     <div class="d-flex justify-content-between mb-3">
-        <h1>ModelHub</h1>
-        <button class="btn btn-primary" onclick="document.getElementById('uploadModel').style.display='block'">Upload Model</button>
+        <h1>Model Hub</h1>
+        <button class="modelUpload" onclick="toggleUploadModal()">
+            <svg style="margin-right: 3px; margin-bottom: 2px;" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
+                <path d="M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
+            </svg>Upload Model
+        </button>
     </div>
 
-    <div id="uploadModel" style="display: none;">
-        <h2>Upload a new model</h2>
+    <div id="uploadModel">
+        <h2>Upload a New Model</h2>
         <form action="/upload_model" method="post" enctype="multipart/form-data">
             <div class="mb-3">
                 <label for="modelName" class="form-label">Model Name:</label>
                 <input type="text" class="form-control" id="modelName" name="modelName" required>
             </div>
             <div class="mb-3">
-                <label for="modelFile" class="form-label">Model File:</label>
-                <input type="file" class="form-control" id="modelFile" name="modelFile" accept=".keras" required>
+                <label for="modelFile" class="file-upload-btn">Choose File</label>
+                <input type="file" class="form-control-file" id="modelFile" name="modelFile" accept=".keras" required style="display: none;">
+                <span id="image-chosen">No File Chosen</span>
             </div>
-            <button type="submit" class="btn btn-success">Upload</button>
-            <button type="button" class="btn btn-secondary" onclick="document.getElementById('uploadModel').style.display='none'">Cancel</button>
+            <div class="mb-3">
+                <button type="button" class="printButton" onclick="document.getElementById('uploadModel').style.display='none'">Cancel</button>
+                <button type="submit" class="downloadExcel">Upload</button>
+            </div>
         </form>
     </div>
 
@@ -43,33 +360,12 @@
     </table>
 </div>
 
-<script>
-$(document).ready(function() {
-    loadModels();
 
-    function loadModels() {
-        // This should ideally fetch from your server using an API endpoint that returns JSON.
-        const models = [
-            {name: "Angina Pectoris Model", file: "angina_pectoris_model.keras"},
-            // Add more models here
-        ];
-
-        let modelHtml = '';
-        models.forEach(function(model) {
-            modelHtml += `
-                <tr>
-                    <td>${model.name}</td>
-                    <td><button class="btn btn-link" onclick="downloadModel('${model.file}')">Download</button></td>
-                </tr>
-            `;
-        });
-        $('#modelList').html(modelHtml);
-    }
-
-    window.downloadModel = function(file) {
-        window.location.href = '/download_model/' + file;
-    }
-});
-</script>
-</body>
-</html>
+{% endblock %}
+<!-- Yükleme ve Onay Simgeleri -->
+<div id="uploadStatus" class="upload-status">
+    <div id="preloader">
+        <div id="loader"></div>
+    </div>
+    <div class="checkmark" style="display:none;">✔</div>
+</div>

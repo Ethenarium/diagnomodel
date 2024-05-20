@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% block title %}Model Hub{% endblock %}
+{% block head %}
+{{ super() }}
+<style type="text/css">
+    body {
+        font-family: 'Roboto', sans-serif;
+        color: #333;
+        background-color: #f9f9f9;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+    }
+
+    header {
+        background-color: #ffffff;
+        padding: 20px 40px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+
+    nav ul {
+        list-style-type: none;
+        padding: 0;
+        display: flex;
+        gap: 20px;
+    }
+
+    nav ul li {
+        display: inline;
+    }
+
+    .row {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    .widget {
+        background-color: #ffffff;
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        margin: 20px 0;
+        padding: 20px;
+        flex-basis: 48%; /* Adjust according to preference */
+        transition: all 0.3s ease;
+        animation: fadeInUp 0.5s;
+    }
+
+    .widget.full {
+        flex-basis: 100%;
+    }
+
+    .widget.half {
+        flex-basis: 48%;
+    }
+
+    .widget:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+
+    .button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .button:hover {
+        background-color: #0056b3;
+        transform: scale(1.05);
+    }
+
+    h3 {
+        color: #4D869C;
+        margin-bottom: 15px;
+        font-size: 24px;
+        text-align: center;
+        position: relative;
+    }
+
+    h3::after {
+        content: '';
+        display: block;
+        width: 230px;
+        height: 3px;
+        background-color: #4D869C;
+        margin: 10px auto 0;
+        border-radius: 5px;
+    }
+
+    ul {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    li {
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+        font-size: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.3s ease;
+    }
+
+    li:hover {
+        background-color: #f1f1f1;
+    }
+
+    li:last-child {
+        border-bottom: none;
+    }
+
+    footer {
+        background-color: #222;
+        color: #fff;
+        font-size: 14px;
+        bottom: 0;
+        position: fixed;
+        left: 0;
+        right: 0;
+        text-align: center;
+        z-index: 999;
+    }
+
+    footer p {
+        margin: 10px 0;
+    }
+
+    footer i {
+        color: red;
+    }
+
+    footer a {
+        color: #3c97bf;
+        text-decoration: none;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var ctx = document.getElementById('performanceChart').getContext('2d');
+    var performanceChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys({{ model_performance|tojson }}),
+            datasets: [{
+                label: 'Accuracy',
+                data: Object.values({{ model_performance|tojson }}).map(data => data.accuracy),
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            },
+            {
+                label: 'Recall',
+                data: Object.values({{ model_performance|tojson }}).map(data => data.recall),
+                backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                },
+                tooltip: {
+                    enabled: true,
+                }
+            }
+        }
+    });
+
+    var patientCounts = {{ patient_counts|tojson }};
+    var patientDates = patientCounts.map(function (count) {
+        return count._id;
+    });
+    var patientValues = patientCounts.map(function (count) {
+        return count.count;
+    });
+
+    var ctx2 = document.getElementById('patientsChart').getContext('2d');
+    var patientsChart = new Chart(ctx2, {
+        type: 'line',
+        data: {
+            labels: patientDates,
+            datasets: [{
+                label: 'Total Patients Over Time',
+                data: patientValues,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1,
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                },
+                tooltip: {
+                    enabled: true,
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+    <div class="dashboard">
+        <div class="row">
+            <div class="widget half total-patients animate__animated animate__fadeInUp">
+                <h3>Total Patients: {{ total_patients }}</h3>
+                <canvas id="patientsChart"></canvas>
+            </div>
+            <div class="widget half recent-diagnoses animate__animated animate__fadeInUp">
+                <h3>Recent Diagnoses</h3>
+                <ul>
+                    {% for patient in recent_patients %}
+                        <li>{{ patient['name'] }}: {{ patient['diagnosis'] or 'Pending' }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 70px;" class="widget full model-performance animate__animated animate__fadeInUp">
+            <h3>Model Performance</h3>
+            <canvas id="performanceChart"></canvas>
+        </div>
+    </div>
+
+<footer>
+    <p>© 2024 Health Project. All rights reserved.</p>
+</footer>
+{% endblock %}
