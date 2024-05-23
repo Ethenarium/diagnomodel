@@ -3,6 +3,8 @@
 {% block head %}
 {{ super() }}
 
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
 <style type="text/css">
     .container {
         margin-top: 50px;
@@ -283,36 +285,52 @@
         loadModels();
 
         function loadModels() {
-            const models = [
-                {name: "Angina Pectoris Model", file: "angina_pectoris_model.keras"},
-                // Add more models here
-            ];
-
-            let modelHtml = '';
-            models.forEach(function(model) {
-                modelHtml += `
-                    <tr>
-                        <td>${model.name}</td>
-                        <td><a style="text-decoration: none;" class="custom-link" href="#" onclick="downloadModel('${model.file}')"><svg style="margin-right: 3px; margin-bottom: 2px;" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#000000"><path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg>Download</a></td>
-                    </tr>
-                `;
+            $.ajax({
+                url: '/get_models',
+                type: 'GET',
+                success: function(models) {
+                    let modelHtml = '';
+                    models.forEach(function(model) {
+                        modelHtml += `
+                            <tr>
+                                <td>${model.name}</td>
+                                <td><a class="custom-link" href="#" onclick="downloadModel('${model.file}')">Download</a></td>
+                            </tr>
+                        `;
+                    });
+                    $('#modelList').html(modelHtml);
+                },
+                error: function(error) {
+                    console.log('Error loading models:', error);
+                }
             });
-            $('#modelList').html(modelHtml);
         }
 
         window.downloadModel = function(file) {
-            window.location.href = '/download_model/' + file;
+            // Ensuring the file path starts with 'models/' if it's not already there
+            const filePath = file.startsWith('models/') ? file : 'models/' + file;
+            window.location.href = '/download_model/' + filePath;
         }
+
+
 
         window.toggleUploadModal = function() {
             var uploadModel = document.getElementById('uploadModel');
-            if (uploadModel.style.display === 'block') {
-                uploadModel.style.display = 'none';
-            } else {
-                uploadModel.style.display = 'block';
-            }
+            uploadModel.style.display = (uploadModel.style.display === 'block') ? 'none' : 'block';
         }
+
+        // Update for file input label
+        $('#modelFile').change(function() {
+            var fileLabel = document.getElementById('image-chosen');
+            var files = this.files;
+            if (files.length > 0) {
+                fileLabel.innerText = files[0].name;
+            } else {
+                fileLabel.innerText = 'No File Chosen';
+            }
+        });
     });
+
 </script>
 
 {% endblock %}
