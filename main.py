@@ -49,8 +49,10 @@ if not os.path.exists('uploads'):  # Eğer 'uploads' klasörü mevcut değilse,
 
 ALLOWED_EXTENSIONS = {'keras'}
 
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 @app.route('/upload_model', methods=['POST'])
 def upload_model():
@@ -76,7 +78,6 @@ def upload_model():
     else:
         flash('Invalid file type')
         return redirect(request.url)
-
 
 
 def get_sequence(seq_name):  # Veritabanında belirli bir sayaç için sıra numarası alır veya oluşturur
