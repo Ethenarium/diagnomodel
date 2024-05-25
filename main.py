@@ -155,7 +155,7 @@ def login():
         pwd = request.form.get("pwd")
         user_info = my_logon(username=username, password=pwd)
         if user_info:
-            return redirect(url_for("index"))
+            return redirect(url_for("dashboard"))
         else:
             flash("Invalid username or password", "error")
             return redirect(url_for("login"))
@@ -164,30 +164,52 @@ def login():
 
 @app.route('/dashboard')
 def dashboard():
-    # Fetch total number of patients
     total_patients = my_db.patientData.count_documents({})
 
-    # Fetch recent diagnoses with patient names, limit to the last 5
+    # Fetch gender distribution
+    gender_distribution = list(my_db.patientData.aggregate([
+        {"$group": {"_id": "$gender", "count": {"$sum": 1}}}
+    ]))
+
+    # Fetch age distribution
+    age_distribution = list(my_db.patientData.aggregate([
+        {"$bucket": {
+            "groupBy": "$age",
+            "boundaries": [0, 18, 30, 45, 60, 75, 100],
+            "default": "100+",
+            "output": {
+                "count": {"$sum": 1}
+            }
+        }}
+    ]))
+
+    # Existing visualizations and patient counts
     recent_patients_cursor = my_db.patientData.find({}, {'name': 1, 'diagnosis': 1}).sort("date_diagnosed", -1).limit(5)
     recent_patients = [patient for patient in recent_patients_cursor]
 
-    # Fetch patient counts over time
     pipeline = [
         {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$date_added"}}, "count": {"$sum": 1}}},
         {"$sort": {"_id": 1}}
     ]
     patient_counts = list(my_db.patientData.aggregate(pipeline))
 
-    # Sample model performance data for visualization
     model_performance = {
         'angina_pectoris': {'accuracy': 0.95, 'recall': 0.92},
         'arrhythmias': {'accuracy': 0.89, 'recall': 0.90},
     }
 
+    diagnosis_frequency = list(my_db.patientData.aggregate([
+        {"$group": {"_id": "$diagnosis", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}  # Optionally sort by frequency
+    ]))
+
     return render_template('dashboard.html', total_patients=total_patients,
                            recent_patients=recent_patients,
                            patient_counts=patient_counts,
-                           model_performance=model_performance)
+                           model_performance=model_performance,
+                           gender_distribution=gender_distribution,
+                           age_distribution=age_distribution,
+                           diagnosis_frequency=diagnosis_frequency)
 
 
 @app.route('/patient_details/<string:patient_id>')
@@ -216,12 +238,6 @@ def index():
 @login_required
 def modelhub():
     return render_template('ModelHub.html')
-
-
-@app.route('/ref')
-@login_required
-def ref():
-    return render_template('ref.html')
 
 
 @app.route('/submit', methods=['POST'])
