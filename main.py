@@ -2,7 +2,7 @@ from datetime import datetime
 import functools
 import os
 import numpy as np
-from flask import Flask, redirect, render_template, request, session, url_for, jsonify, current_app, Response, flash
+from flask import Flask, redirect, render_template, request, session, url_for, jsonify, current_app, Response, flash, send_from_directory
 from werkzeug.utils import secure_filename
 import pymongo
 from decouple import config
@@ -16,6 +16,7 @@ import io
 import base64
 from tensorflow.keras.models import load_model
 import time
+import shutil
 
 app = Flask('app')  # Flask uygulaması oluşturur
 app.secret_key = config('secret')  # Flask uygulamasının gizli anahtarını .env dosyasından ayarlar
@@ -45,6 +46,37 @@ valvular_heart_disease_model = load_model('valvular_heart_disease_model.keras')
 
 if not os.path.exists('uploads'):  # Eğer 'uploads' klasörü mevcut değilse,
     os.makedirs('uploads')  # 'uploads' klasörünü oluşturur
+
+ALLOWED_EXTENSIONS = {'keras'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload_model', methods=['POST'])
+def upload_model():
+    if 'modelFile' not in request.files:
+        flash('No file part')
+        return redirect(request.url)
+    file = request.files['modelFile']
+    if file.filename == '':
+        flash('No selected file')
+        return redirect(request.url)
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        temp_path = os.path.join('uploads', filename)
+        final_path = os.path.join('models', filename)
+        file.save(temp_path)
+        shutil.move(temp_path, final_path)
+        my_db.models.insert_one({
+            'name': request.form['modelName'],
+            'file_path': final_path
+        })
+        flash('File successfully uploaded')
+        return redirect(url_for('modelhub'))
+    else:
+        flash('Invalid file type')
+        return redirect(request.url)
+
 
 
 def get_sequence(seq_name):  # Veritabanında belirli bir sayaç için sıra numarası alır veya oluşturur
