@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 import numpy as np
 
-model = load_model("cad_model.keras")
+model = load_model("models/cad.keras")
 
 test_data = pd.read_csv("cad.csv")
 X_test = test_data.iloc[:, :-1]

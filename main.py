@@ -2,53 +2,74 @@ from datetime import datetime
 import functools
 import os
 import numpy as np
-from flask import Flask, redirect, render_template, request, session, url_for, jsonify, current_app, Response, flash, send_from_directory
+from flask import Flask, redirect, render_template, request, session, url_for, jsonify, current_app, Response, flash
+from tensorflow import keras
 from werkzeug.utils import secure_filename
 import pymongo
 from decouple import config
 import pandas as pd
 from bson.objectid import ObjectId
 import json
-import joblib
 from flask_mail import Mail, Message
 from bson.binary import Binary
 import io
 import base64
 from tensorflow.keras.models import load_model
 import time
-import shutil
 
 app = Flask('app')  # Flask uygulaması oluşturur
 app.secret_key = config('secret')  # Flask uygulamasının gizli anahtarını .env dosyasından ayarlar
 my_client = pymongo.MongoClient(config('mongo_url'))  # MongoDB istemcisini .env dosyasındaki URL ile başlatır
 my_db = my_client[config('db_name')]  # MongoDB veritabanını .env dosyasındaki isimle seçer
 
-angina_pectoris_model = load_model('angina_pectoris_model.keras')
-arrhythmias_model = load_model('arrhythmias_model.keras')
-atherosclerosis_model = load_model('atherosclerosis_model.keras')
-cad_model = load_model('cad_model.keras')
-cardiac_arrest_model = load_model('cardiac_arrest_model.keras')
-cardiogenic_shock_model = load_model('cardiogenic_shock_model.keras')
-cardiomyopathy_model = load_model('cardiomyopathy_model.keras')
-congenital_heart_defects_model = load_model('congenital_heart_defects_model.keras')
-endocarditis_model = load_model('endocarditis_model.keras')
-heart_attack_model = load_model('heart_attack_model.keras')
-heart_failure_model = load_model('heart_failure_model.keras')
-heart_murmur_model = load_model('heart_murmur_model.keras')
-heart_valve_regurgitation_model = load_model('heart_valve_regurgitation_model.keras')
-heart_valve_stenosis_model = load_model('heart_valve_stenosis_model.keras')
-hypertension_model = load_model('hypertension_model.keras')
-pad_model = load_model('pad_model.keras')
-pericarditis_model = load_model('pericarditis_model.keras')
-pulmonary_embolism_model = load_model('pulmonary_embolism_model.keras')
-rheumatic_heart_disease_model = load_model('rheumatic_heart_disease_model.keras')
-valvular_heart_disease_model = load_model('valvular_heart_disease_model.keras')
+model_paths = {
+    'angina_pectoris': 'models/angina_pectoris.keras',
+    'arrhythmias': 'models/arrhythmias.keras',
+    'atherosclerosis': 'models/atherosclerosis.keras',
+    'cad': 'models/cad.keras',
+    'cardiac_arrest': 'models/cardiac_arrest.keras',
+    'cardiogenic_shock': 'models/cardiogenic_shock.keras',
+    'cardiomyopathy': 'models/cardiomyopathy.keras',
+    'congenital_heart_defects': 'models/congenital_heart_defects.keras',
+    'endocarditis': 'models/endocarditis.keras',
+    'heart_attack': 'models/heart_attack.keras',
+    'heart_failure': 'models/heart_failure.keras',
+    'heart_murmur': 'models/heart_murmur.keras',
+    'heart_valve_regurgitation': 'models/heart_valve_regurgitation.keras',
+    'heart_valve_stenosis': 'models/heart_valve_stenosis.keras',
+    'hypertension': 'models/hypertension.keras',
+    'pad': 'models/pad.keras',
+    'pericarditis': 'models/pericarditis.keras',
+    'pulmonary_embolism': 'models/pulmonary_embolism.keras',
+    'rheumatic_heart_disease': 'models/rheumatic_heart_disease.keras',
+    'valvular_heart_disease': 'models/valvular_heart_disease.keras'
+}
 
-if not os.path.exists('uploads'):  # Eğer 'uploads' klasörü mevcut değilse,
-    os.makedirs('uploads')  # 'uploads' klasörünü oluşturur
+
+loaded_models = {key: keras.models.load_model(path) for key, path in model_paths.items()}
+
+@app.route('/activate_model/<model_id>', methods=['POST'])
+def activate_model(model_id):
+    model_record = my_db.models.find_one({"_id": ObjectId(model_id)})
+    if not model_record:
+        return jsonify({'error': 'Model not found'}), 404
+
+    model_name = model_record['name']
+    model_path = os.path.join('models', f"{model_name}.keras")  # Construct path to the model
+
+    if not os.path.exists(model_path):
+        return jsonify({'error': 'Model file not found on server'}), 404
+
+    try:
+        new_model = load_model(model_path)  # Load the model from the filesystem
+        # Here, update your application context or model registry
+        # For example, you might want to update a global or a database entry indicating the active model
+        return jsonify({'message': 'Model activated successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': 'Failed to load model', 'message': str(e)}), 500
+
 
 ALLOWED_EXTENSIONS = {'keras'}
-
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -65,19 +86,48 @@ def upload_model():
         return redirect(request.url)
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        temp_path = os.path.join('uploads', filename)
-        final_path = os.path.join('models', filename)
-        file.save(temp_path)
-        shutil.move(temp_path, final_path)
-        my_db.models.insert_one({
-            'name': request.form['modelName'],
-            'file_path': final_path
-        })
-        flash('File successfully uploaded')
+        model_data = file.read()
+        binary_model = Binary(model_data)
+        model_document = {
+            'name': request.form['diseaseSelect'],
+            'model_data': binary_model,
+            'upload_date': datetime.now()
+        }
+        my_db.models.insert_one(model_document)
+        flash('Model successfully uploaded')
         return redirect(url_for('modelhub'))
     else:
         flash('Invalid file type')
         return redirect(request.url)
+
+
+@app.route('/download/<model_id>', methods=['GET'])
+def download(model_id):
+    model_record = my_db.models.find_one({"_id": ObjectId(model_id)})
+    if not model_record:
+        flash("Model not found.")
+        return redirect(url_for('modelhub'))
+
+    binary_model = model_record['model_data']
+    model_name = model_record['name']
+    temp_path = os.path.join('models', f"{model_name}.keras")
+    if not os.path.exists('models'):
+        os.makedirs('models')
+    with open(temp_path, 'wb') as f:
+        f.write(binary_model)
+
+    flash('Model mock downloaded successfully.')
+    return redirect(url_for('modelhub'))
+
+
+@app.route('/api/models', methods=['GET'])
+def list_models():
+    try:
+        models = my_db.models.find({}, {'name': 1, 'upload_date': 1})
+        models_list = [{'_id': str(model['_id']), 'name': model['name'], 'upload_date': model['upload_date']} for model in models]
+        return jsonify(models_list)
+    except Exception as e:
+        return jsonify({'error': 'Failed to fetch models', 'message': str(e)}), 500
 
 
 def get_sequence(seq_name):  # Veritabanında belirli bir sayaç için sıra numarası alır veya oluşturur
@@ -168,7 +218,7 @@ def my_logon(username, password):
 
 @app.route('/logout')
 def logout():
-    session.clear()  # Clears all data in the session
+    session.clear()
     return redirect(url_for('login'))
 
 
@@ -419,6 +469,7 @@ def get_patient_by_name(patient_name):
 
 def classify_symptoms(symptoms):
     diseases = {
+        'No Diagnosis': [],
         'Cad': ['ChestPain', 'ShortnessOfBreath', 'Fatigue', 'IrregularHeartbeat', 'ExtremeWeakness', 'BlurredVision'], # CAD
         'Heart Attack': ['ChestPain', 'ShortnessOfBreath', 'Nausea', 'ColdSweats', 'PainArm', 'PoorGrowthInInfants'], # Heart Attack
         'Heart Failure': ['ShortnessOfBreath', 'Fatigue', 'Swelling', 'PersistentCough', 'RapidPulse', 'JawPain'], # Heart Failure
@@ -441,7 +492,7 @@ def classify_symptoms(symptoms):
         'Peripheral Artery Disease (PAD)': ['LegPain', 'NumbnessOrWeaknessInLegs', 'ColdnessInLowerLegOrFoot', 'SoresOrWoundsOnToesFeetOrLegs', 'Drinker'] # Peripheral Artery Disease (PAD)
     }
 
-    best_match = None
+    best_match = 'No Diagnosis'
     max_count = 0
     max_intensity = 0
 
@@ -460,7 +511,7 @@ def classify_symptoms(symptoms):
 def process_input(symptoms):
     disease = classify_symptoms(symptoms)
     if disease:
-        model = load_model(f"{disease.lower().replace(' ', '_')}_model.keras")
+        model = load_model("models/"f"{disease.lower().replace(' ', '_')}.keras")
         input_data = np.array([list(symptoms.values())])
         prediction = model.predict(input_data)
         return disease, prediction[0]

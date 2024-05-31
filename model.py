@@ -5,7 +5,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import Adam
 import time
 
-df = pd.read_csv('pad.csv')
+df = pd.read_csv('cad.csv')
 
 num_classes = 21
 X = df.drop(['Diagnosis Result'], axis=1)

@@ -4,6 +4,7 @@
 {{ super() }}
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 
 <style type="text/css">
     .container {
@@ -286,7 +287,7 @@
 
         function loadModels() {
             $.ajax({
-                url: '/get_models',
+                url: '/api/models',  // This should match the Flask route
                 type: 'GET',
                 success: function(models) {
                     let modelHtml = '';
@@ -294,32 +295,54 @@
                         modelHtml += `
                             <tr>
                                 <td>${model.name}</td>
-                                <td><a class="custom-link" href="#" onclick="downloadModel('${model.file}')">Download</a></td>
+                                <td>${model.upload_date}</td>
+                                <td>
+                                    <button class="custom-link" onclick="downloadModel('${model._id}')">Download</button>
+                                    <button class="custom-link" onclick="activateModel('${model._id}')">Activate</button>
+                                </td>
                             </tr>
                         `;
                     });
+
                     $('#modelList').html(modelHtml);
                 },
                 error: function(error) {
                     console.log('Error loading models:', error);
+                    alert('Failed to load models');
                 }
             });
         }
 
-        window.downloadModel = function(file) {
-            // Ensuring the file path starts with 'models/' if it's not already there
-            const filePath = file.startsWith('models/') ? file : 'models/' + file;
-            window.location.href = '/download_model/' + filePath;
-        }
+        $('#uploadModel form').submit(function(e) {
+            e.preventDefault();
+            var formData = new FormData(this);
 
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    $('#uploadModel').hide();
+                    loadModels();  // Reload the models list
+                    alert('Model uploaded successfully');
+                },
+                error: function(response) {
+                    alert('Failed to upload model');
+                }
+            });
+        });
 
+        window.downloadModel = function(modelId) {
+            window.location.href = `/download/${modelId}`;
+        };
 
         window.toggleUploadModal = function() {
             var uploadModel = document.getElementById('uploadModel');
             uploadModel.style.display = (uploadModel.style.display === 'block') ? 'none' : 'block';
         }
 
-        // Update for file input label
         $('#modelFile').change(function() {
             var fileLabel = document.getElementById('image-chosen');
             var files = this.files;
@@ -331,44 +354,78 @@
         });
     });
 
-</script>
+    // Define activateModel globally
+    window.activateModel = function(modelId) {
+        $.ajax({
+            url: '/activate_model/' + modelId,  // Changed to a more RESTful endpoint style
+            type: 'POST',
+            success: function(response) {
+                alert('Model activated successfully.');
+                // Optionally reload or update page content here
+            },
+            error: function(error) {
+                alert('Failed to activate model. Error: ' + error.responseText);
+            }
+        });
+    }
 
+</script>
 {% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="d-flex justify-content-between mb-3">
         <h1>Model Hub</h1>
-        <button class="modelUpload" onclick="toggleUploadModal()">
-            <svg style="margin-right: 3px; margin-bottom: 2px;" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF">
-                <path d="M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
-            </svg>Upload Model
-        </button>
+        <button class="modelUpload" onclick="toggleUploadModal()">Upload Model</button>
     </div>
 
     <div id="uploadModel">
         <h2>Upload a New Model</h2>
         <form action="/upload_model" method="post" enctype="multipart/form-data">
             <div class="mb-3">
-                <label for="modelName" class="form-label">Model Name:</label>
-                <input type="text" class="form-control" id="modelName" name="modelName" required>
+                <label for="diseaseSelect" class="form-label">Disease Model:</label>
+                <select class="form-control" id="diseaseSelect" name="diseaseSelect" required>
+                    <option value="">Select a Disease</option>
+                    <option value="angina_pectoris">Angina Pectoris</option>
+                    <option value="arrhythmias">Arrhythmias</option>
+                    <option value="atherosclerosis">Atherosclerosis</option>
+                    <option value="cad">Coronary Artery Disease</option>
+                    <option value="cardiac_arrest">Cardiac Arrest</option>
+                    <option value="cardiogenic_shock">Cardiogenic Shock</option>
+                    <option value="cardiomyopathy">Cardiomyopathy</option>
+                    <option value="congenital_heart_defects">Congenital Heart Defects</option>
+                    <option value="endocarditis">Endocarditis</option>
+                    <option value="heart_attack">Heart Attack</option>
+                    <option value="heart_failure">Heart Failure</option>
+                    <option value="heart_murmur">Heart Murmur</option>
+                    <option value="heart_valve_regurgitation">Heart Valve Regurgitation</option>
+                    <option value="heart_valve_stenosis">Heart Valve Stenosis</option>
+                    <option value="hypertension">Hypertension</option>
+                    <option value="pad">Peripheral Artery Disease</option>
+                    <option value="pericarditis">Pericarditis</option>
+                    <option value="pulmonary_embolism">Pulmonary Embolism</option>
+                    <option value="rheumatic_heart_disease">Rheumatic Heart Disease</option>
+                    <option value="valvular_heart_disease">Valvular Heart Disease</option>
+                </select>
             </div>
             <div class="mb-3">
-                <label for="modelFile" class="file-upload-btn">Choose File</label>
-                <input type="file" class="form-control-file" id="modelFile" name="modelFile" accept=".keras" required style="display: none;">
+                <label for="modelFile" class="custom-file-label">Choose File</label>
+                <input type="file" class="custom-file-input" id="modelFile" name="modelFile" accept=".keras" required style="display: none;">
                 <span id="image-chosen">No File Chosen</span>
             </div>
             <div class="mb-3">
-                <button type="button" class="printButton" onclick="document.getElementById('uploadModel').style.display='none'">Cancel</button>
-                <button type="submit" class="downloadExcel">Upload</button>
+                <button type="button" class="custom-secondary-button" onclick="document.getElementById('uploadModel').style.display='none'">Cancel</button>
+                <button type="submit" class="custom-success-button">Upload</button>
             </div>
         </form>
     </div>
+
 
     <table class="table">
         <thead>
             <tr>
                 <th scope="col">Model Name</th>
+                <th scope="col">Upload Date</th>
                 <th scope="col">Actions</th>
             </tr>
         </thead>
@@ -377,13 +434,4 @@
         </tbody>
     </table>
 </div>
-
-
 {% endblock %}
-<!-- Yükleme ve Onay Simgeleri -->
-<div id="uploadStatus" class="upload-status">
-    <div id="preloader">
-        <div id="loader"></div>
-    </div>
-    <div class="checkmark" style="display:none;">✔</div>
-</div>
