@@ -2,7 +2,7 @@ from datetime import datetime
 import functools
 import os
 import numpy as np
-from flask import Flask, redirect, render_template, request, session, url_for, jsonify, current_app, Response, flash
+from flask import Flask, redirect, render_template, request, session, url_for, jsonify, current_app, Response, flash, send_file
 from tensorflow import keras
 from werkzeug.utils import secure_filename
 import pymongo
@@ -71,6 +71,7 @@ def activate_model(model_id):
 
 ALLOWED_EXTENSIONS = {'keras'}
 
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -116,8 +117,7 @@ def download(model_id):
     with open(temp_path, 'wb') as f:
         f.write(binary_model)
 
-    flash('Model mock downloaded successfully.')
-    return redirect(url_for('modelhub'))
+    return send_file(temp_path, as_attachment=True, download_name=f"{model_name}.keras")
 
 
 @app.route('/api/models', methods=['GET'])

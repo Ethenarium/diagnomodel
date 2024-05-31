@@ -91,69 +91,6 @@
         font-weight: bold;
     }
 
-    .custom-success-button {
-        background-color: #28a745;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        cursor: pointer;
-        border-radius: 8px;
-        font-size: 16px;
-        transition: background-color 0.3s ease, transform 0.3s ease;
-    }
-
-    .custom-success-button:hover {
-        background-color: #218838;
-        transform: scale(1.05);
-    }
-
-    .custom-secondary-button {
-        background-color: #6c757d;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        cursor: pointer;
-        border-radius: 8px;
-        font-size: 16px;
-        transition: background-color 0.3s ease, transform 0.3s ease;
-    }
-
-    .custom-secondary-button:hover {
-        background-color: #5a6268;
-        transform: scale(1.05);
-    }
-
-    .custom-file-input-wrapper {
-        position: relative;
-        overflow: hidden;
-        display: inline-block;
-    }
-
-    .custom-file-input {
-        font-size: 16px;
-        position: absolute;
-        left: 0;
-        top: 0;
-        opacity: 0;
-        cursor: pointer;
-    }
-
-    .custom-file-label {
-        background-color: #4D869C;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-size: 16px;
-        cursor: pointer;
-        display: inline-block;
-        transition: background-color 0.3s ease, transform 0.3s ease;
-    }
-
-    .custom-file-label:hover {
-        background-color: #3a6c78;
-        transform: scale(1.05);
-    }
-
     #loader {
         display: block;
         position: absolute;
@@ -279,9 +216,164 @@
         background-color: #3a6c78;
         transform: scale(0.9);
     }
+
+    .download {
+        border-radius: 10px;
+        padding: 8px 16px;
+        color: white;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease-in-out;
+        font-size: 14px;
+        background-color: #82CD47;
+    }
+
+    .download:hover {
+        background-color: #54B435;
+        transform: scale(1.1);
+    }
+
+    .download:active {
+        background-color: #3e8e41;
+        transform: scale(0.9);
+    }
+
+    .activate {
+        border-radius: 10px;
+        padding: 8px 16px;
+        color: white;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease-in-out;
+        font-size: 14px;
+        background-color: #50C4ED;
+    }
+
+    .activate:hover {
+        background-color: #387ADF;
+        transform: scale(1.1);
+    }
+
+    .activate:active {
+        background-color: #387ADF;
+        transform: scale(0.9);
+    }
+
+    .toast {
+        position: fixed;
+        top: 120px;
+        right: 13px;
+        min-width: 250px;
+        border: 1px solid transparent;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        background-color: #f0f0f0;
+        color: #333;
+        z-index: 1050;
+        transition: transform 0.5s ease-in-out, box-shadow 0.3s ease, opacity 0.5s ease-in-out;
+        transform: translateX(90%);
+        opacity: 0;
+    }
+
+    .toast.show {
+        transform: translateX(0%);
+        opacity: 1;
+    }
+
+    .toast.hide {
+        transform: translateX(90%);
+        opacity: 0;
+    }
+
+    .toast:hover {
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
+        transform: scale(1.05);
+    }
+
+    .toast-header {
+        padding: 8px 16px;
+        border-bottom: 1px solid #666;
+        font-weight: bold;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    .toast-body {
+        padding: 10px 16px;
+        background-color: white;
+        color: #444;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+        font-size: 16px;
+        font-family: 'Helvetica', sans-serif;
+        line-height: 1.5;
+    }
+
+    .toast .close {
+        opacity: 0.6;
+        color: #fff;
+        transition: opacity 0.3s ease, color 0.3s ease;
+        background: transparent;
+        border: none;
+        font-size: 20px;
+    }
+
+    .toast .close:hover {
+        opacity: 1;
+        color: #cccccc;
+    }
+
+    @keyframes neon {
+        0%, 100% {
+            box-shadow: 0 0 0px rgba(0, 0, 0, 0);
+        }
+        50% {
+            box-shadow: 0 0 3px 2px rgba(0, 255, 0, 0.2); /* Daha az belirgin yeşil ışık */
+        }
+    }
+
+    #successToast {
+        animation: neon 8s infinite linear;
+    }
 </style>
 
 <script>
+    function showToast(message, type = 'success') {
+        // Mesajı sessionStorage'a kaydet
+        sessionStorage.setItem('toastMessage', message);
+        sessionStorage.setItem('toastType', type);
+        location.reload();  // Sayfa yeniden yüklenir
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var toastMessage = sessionStorage.getItem('toastMessage');
+        var toastType = sessionStorage.getItem('toastType') || 'success';
+
+        if (toastMessage) {
+            var toastElementId = toastType === 'success' ? 'successToast' : 'errorToast';
+            var toastElement = document.getElementById(toastElementId);
+            var toastBody = toastElement.querySelector('.toast-body');
+
+            toastBody.textContent = toastMessage;  // Mesajı güncelle
+
+            var bsToast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: 8000
+            });
+
+            bsToast.show();
+            sessionStorage.removeItem('toastMessage');  // Mesajı gösterdikten sonra sil
+            sessionStorage.removeItem('toastType');  // Tipi sil
+
+            // Toast gizlendiğinde sayfayı yenile (Opsiyonel)
+            toastElement.addEventListener('hidden.bs.toast', function () {
+                location.reload();
+            });
+        }
+    });
+
     $(document).ready(function() {
         loadModels();
 
@@ -297,8 +389,8 @@
                                 <td>${model.name}</td>
                                 <td>${model.upload_date}</td>
                                 <td>
-                                    <button class="custom-link" onclick="downloadModel('${model._id}')">Download</button>
-                                    <button class="custom-link" onclick="activateModel('${model._id}')">Activate</button>
+                                    <button class="download" onclick="downloadModel('${model._id}')">Download</button>
+                                    <button class="activate" onclick="activateModel('${model._id}')">Activate</button>
                                 </td>
                             </tr>
                         `;
@@ -308,7 +400,7 @@
                 },
                 error: function(error) {
                     console.log('Error loading models:', error);
-                    alert('Failed to load models');
+                    showToast('Failed to load models', 'error');
                 }
             });
         }
@@ -326,16 +418,37 @@
                 success: function(response) {
                     $('#uploadModel').hide();
                     loadModels();  // Reload the models list
-                    alert('Model uploaded successfully');
+                    showToast('Model uploaded successfully', 'success');
                 },
                 error: function(response) {
-                    alert('Failed to upload model');
+                    showToast('Failed to upload model', 'error');
                 }
             });
         });
 
         window.downloadModel = function(modelId) {
-            window.location.href = `/download/${modelId}`;
+            fetch(`/download/${modelId}`)
+                .then(response => {
+                    if (response.ok) {
+                        return response.blob();
+                    } else {
+                        throw new Error('Failed to download model');
+                    }
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${modelId}.keras`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    showToast('Model downloaded successfully', 'success');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Failed to download model', 'error');
+                });
         };
 
         window.toggleUploadModal = function() {
@@ -360,16 +473,17 @@
             url: '/activate_model/' + modelId,  // Changed to a more RESTful endpoint style
             type: 'POST',
             success: function(response) {
-                alert('Model activated successfully.');
+                showToast('Model activated successfully.', 'success');
                 // Optionally reload or update page content here
             },
             error: function(error) {
-                alert('Failed to activate model. Error: ' + error.responseText);
+                showToast('Failed to activate model. Error: ' + error.responseText, 'error');
             }
         });
     }
 
 </script>
+
 {% endblock %}
 
 {% block content %}
@@ -377,6 +491,18 @@
     <div class="d-flex justify-content-between mb-3">
         <h1>Model Hub</h1>
         <button class="modelUpload" onclick="toggleUploadModal()">Upload Model</button>
+    </div>
+
+    <!-- Başarı Durumu için Toast -->
+    <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header bg-success text-white">
+        <strong class="mr-auto">Success !</strong>
+        <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="toast-body">
+      </div>
     </div>
 
     <div id="uploadModel">
@@ -409,13 +535,13 @@
                 </select>
             </div>
             <div class="mb-3">
-                <label for="modelFile" class="custom-file-label">Choose File</label>
-                <input type="file" class="custom-file-input" id="modelFile" name="modelFile" accept=".keras" required style="display: none;">
+                <label for="modelFile" class="file-upload-btn">Choose File</label>
+                <input type="file" class="form-control-file" id="modelFile" name="modelFile" accept=".keras" required style="display: none;">
                 <span id="image-chosen">No File Chosen</span>
             </div>
             <div class="mb-3">
-                <button type="button" class="custom-secondary-button" onclick="document.getElementById('uploadModel').style.display='none'">Cancel</button>
-                <button type="submit" class="custom-success-button">Upload</button>
+                <button type="button" class="printButton" onclick="document.getElementById('uploadModel').style.display='none'">Cancel</button>
+                <button type="submit" class="downloadExcel">Upload</button>
             </div>
         </form>
     </div>
@@ -434,4 +560,5 @@
         </tbody>
     </table>
 </div>
+
 {% endblock %}
