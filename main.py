@@ -1,11 +1,13 @@
+import shutil
 from datetime import datetime
 import functools
 import os
 import numpy as np
-from flask import Flask, redirect, render_template, request, session, url_for, jsonify, current_app, Response, flash, send_file
+from flask import Flask, redirect, render_template, request, session, url_for, jsonify, current_app, Response, flash
 from tensorflow import keras
 from werkzeug.utils import secure_filename
 import pymongo
+from sklearn.metrics import f1_score
 from decouple import config
 import pandas as pd
 from bson.objectid import ObjectId
@@ -13,7 +15,6 @@ import json
 from flask_mail import Mail, Message
 from bson.binary import Binary
 import io
-import base64
 from tensorflow.keras.models import load_model
 import time
 
@@ -21,28 +22,73 @@ app = Flask('app')  # Flask uygulaması oluşturur
 app.secret_key = config('secret')  # Flask uygulamasının gizli anahtarını .env dosyasından ayarlar
 my_client = pymongo.MongoClient(config('mongo_url'))  # MongoDB istemcisini .env dosyasındaki URL ile başlatır
 my_db = my_client[config('db_name')]  # MongoDB veritabanını .env dosyasındaki isimle seçer
+warning_models = []
+
+model_to_dataset = {
+        'active_models/cad.keras': '1.csv',
+        'active_models/heart_attack.keras': '2.csv',
+        'active_models/heart_failure.keras': '3.csv',
+        'active_models/arrhythmias.keras': '4.csv',
+        'active_models/hypertension.keras': '5.csv',
+        'active_models/atherosclerosis.keras': '6.csv',
+        'active_models/angina_pectoris.keras': '7.csv',
+        'active_models/endocarditis.keras': '8.csv',
+        'active_models/valvular_heart_disease.keras': '9.csv',
+        'active_models/pericarditis.keras': '10.csv',
+        'active_models/cardiomyopathy.keras': '11.csv',
+        'active_models/congenital_heart_defects.keras': '12.csv',
+        'active_models/pulmonary_embolism.keras': '13.csv',
+        'active_models/cardiac_arrest.keras': '14.csv',
+        'active_models/cardiogenic_shock.keras': '15.csv',
+        'active_models/rheumatic_heart_disease.keras': '16.csv',
+        'active_models/heart_valve_regurgitation.keras': '17.csv',
+        'active_models/heart_valve_stenosis.keras': '18.csv',
+        'active_models/heart_murmur.keras': '19.csv',
+        'active_models/pad.keras': '20.csv'
+    }
+
+
+def evaluate_model_performance():
+    for model_file in os.listdir('active_models'):
+        model_name = model_file[:-6]
+        dataset_filename = model_to_dataset.get('active_models/' + model_file)
+        if dataset_filename:
+            model_path = os.path.join('active_models', model_file)
+            model = load_model(model_path)
+            test_data = pd.read_csv('datasets/' + dataset_filename)
+            X_test = test_data.iloc[:, :-1]
+            y_test = test_data.iloc[:, -1]
+
+            predictions = model.predict(X_test)
+            predictions = np.argmax(predictions, axis=1)
+
+            f1 = f1_score(y_test, predictions, average='macro')
+            print(f"Processed {model_name}: F1-Score = {f1}")
+            if f1 < 0.50:
+                warning_models.append(model_name)
+
 
 model_paths = {
-    'angina_pectoris': 'models/angina_pectoris.keras',
-    'arrhythmias': 'models/arrhythmias.keras',
-    'atherosclerosis': 'models/atherosclerosis.keras',
-    'cad': 'models/cad.keras',
-    'cardiac_arrest': 'models/cardiac_arrest.keras',
-    'cardiogenic_shock': 'models/cardiogenic_shock.keras',
-    'cardiomyopathy': 'models/cardiomyopathy.keras',
-    'congenital_heart_defects': 'models/congenital_heart_defects.keras',
-    'endocarditis': 'models/endocarditis.keras',
-    'heart_attack': 'models/heart_attack.keras',
-    'heart_failure': 'models/heart_failure.keras',
-    'heart_murmur': 'models/heart_murmur.keras',
-    'heart_valve_regurgitation': 'models/heart_valve_regurgitation.keras',
-    'heart_valve_stenosis': 'models/heart_valve_stenosis.keras',
-    'hypertension': 'models/hypertension.keras',
-    'pad': 'models/pad.keras',
-    'pericarditis': 'models/pericarditis.keras',
-    'pulmonary_embolism': 'models/pulmonary_embolism.keras',
-    'rheumatic_heart_disease': 'models/rheumatic_heart_disease.keras',
-    'valvular_heart_disease': 'models/valvular_heart_disease.keras'
+    'angina_pectoris': 'active_models/angina_pectoris.keras',
+    'arrhythmias': 'active_models/arrhythmias.keras',
+    'atherosclerosis': 'active_models/atherosclerosis.keras',
+    'cad': 'active_models/cad.keras',
+    'cardiac_arrest': 'active_models/cardiac_arrest.keras',
+    'cardiogenic_shock': 'active_models/cardiogenic_shock.keras',
+    'cardiomyopathy': 'active_models/cardiomyopathy.keras',
+    'congenital_heart_defects': 'active_models/congenital_heart_defects.keras',
+    'endocarditis': 'active_models/endocarditis.keras',
+    'heart_attack': 'active_models/heart_attack.keras',
+    'heart_failure': 'active_models/heart_failure.keras',
+    'heart_murmur': 'active_models/heart_murmur.keras',
+    'heart_valve_regurgitation': 'active_models/heart_valve_regurgitation.keras',
+    'heart_valve_stenosis': 'active_models/heart_valve_stenosis.keras',
+    'hypertension': 'active_models/hypertension.keras',
+    'pad': 'active_models/pad.keras',
+    'pericarditis': 'active_models/pericarditis.keras',
+    'pulmonary_embolism': 'active_models/pulmonary_embolism.keras',
+    'rheumatic_heart_disease': 'active_models/rheumatic_heart_disease.keras',
+    'valvular_heart_disease': 'active_models/valvular_heart_disease.keras'
 }
 
 
@@ -55,15 +101,16 @@ def activate_model(model_id):
         return jsonify({'error': 'Model not found'}), 404
 
     model_name = model_record['name']
-    model_path = os.path.join('models', f"{model_name}.keras")  # Construct path to the model
+    model_path = os.path.join('models', f"{model_name}.keras")
 
     if not os.path.exists(model_path):
         return jsonify({'error': 'Model file not found on server'}), 404
 
     try:
-        new_model = load_model(model_path)  # Load the model from the filesystem
-        # Here, update your application context or model registry
-        # For example, you might want to update a global or a database entry indicating the active model
+        active_model_path = os.path.join('active_models', f"{model_name}.keras")
+        if os.path.exists(active_model_path):
+            os.remove(active_model_path)
+        shutil.copy(model_path, active_model_path)
         return jsonify({'message': 'Model activated successfully'}), 200
     except Exception as e:
         return jsonify({'error': 'Failed to load model', 'message': str(e)}), 500
@@ -111,13 +158,14 @@ def download(model_id):
 
     binary_model = model_record['model_data']
     model_name = model_record['name']
-    temp_path = os.path.join('models', f"{model_name}.keras")
+    model_path = os.path.join('models', f"{model_name}.keras")
+
     if not os.path.exists('models'):
         os.makedirs('models')
-    with open(temp_path, 'wb') as f:
+    with open(model_path, 'wb') as f:
         f.write(binary_model)
 
-    return send_file(temp_path, as_attachment=True, download_name=f"{model_name}.keras")
+    return jsonify({'message': 'Model saved successfully', 'model_path': model_path}), 200
 
 
 @app.route('/api/models', methods=['GET'])
@@ -130,7 +178,7 @@ def list_models():
         return jsonify({'error': 'Failed to fetch models', 'message': str(e)}), 500
 
 
-def get_sequence(seq_name):  # Veritabanında belirli bir sayaç için sıra numarası alır veya oluşturur
+def get_sequence(seq_name):
     return my_db.counters.find_one_and_update(filter={"_id": seq_name}, update={"$inc": {"seq": 1}}, upsert=True)["seq"]
 
 
@@ -249,12 +297,10 @@ def login():
 def dashboard():
     total_patients = my_db.patientData.count_documents({})
 
-    # Fetch gender distribution
     gender_distribution = list(my_db.patientData.aggregate([
         {"$group": {"_id": "$gender", "count": {"$sum": 1}}}
     ]))
 
-    # Fetch age distribution
     age_distribution = list(my_db.patientData.aggregate([
         {"$bucket": {
             "groupBy": "$age",
@@ -266,7 +312,6 @@ def dashboard():
         }}
     ]))
 
-    # Existing visualizations and patient counts
     recent_patients_cursor = my_db.patientData.find({}, {'name': 1, 'diagnosis': 1}).sort("date_diagnosed", -1).limit(5)
     recent_patients = [patient for patient in recent_patients_cursor]
 
@@ -276,14 +321,29 @@ def dashboard():
     ]
     patient_counts = list(my_db.patientData.aggregate(pipeline))
 
-    model_performance = {
-        'angina_pectoris': {'accuracy': 0.95, 'recall': 0.92},
-        'arrhythmias': {'accuracy': 0.89, 'recall': 0.90},
-    }
+    model_performance = {}
+    for model_file in os.listdir('active_models'):
+        model_name = model_file[:-6]
+        dataset_filename = model_to_dataset.get('active_models/' + model_file)
+        if dataset_filename:
+            model_path = os.path.join('active_models', model_file)
+            model = load_model(model_path)
+            test_data = pd.read_csv('datasets/' + dataset_filename)
+            X_test = test_data.iloc[:, :-1]
+            y_test = test_data.iloc[:, -1]
+
+            predictions = model.predict(X_test)
+            predictions = np.argmax(predictions, axis=1)
+
+            f1 = f1_score(y_test, predictions, average='macro')
+            model_performance[model_name] = {'f1_score': f1}
+            print(f"Processed {model_name}: F1-Score = {f1}")
+        else:
+            print(f"Dataset not found for {model_name}")
 
     diagnosis_frequency = list(my_db.patientData.aggregate([
         {"$group": {"_id": "$diagnosis", "count": {"$sum": 1}}},
-        {"$sort": {"count": -1}}  # Optionally sort by frequency
+        {"$sort": {"count": -1}}
     ]))
 
     return render_template('dashboard.html', total_patients=total_patients,
@@ -326,16 +386,14 @@ def modelhub():
 @app.route('/submit', methods=['POST'])
 @login_required
 def submit():
-    # Form verilerini al
     name = request.form.get("name")
     email = request.form.get("email")
-    age = int(request.form.get("age", 0))  # Use 0 as default if age is not provided
-    weight = float(request.form.get("weight", 0))  # Eğer değer yoksa 0 olarak kabul et
-    height = float(request.form.get("height", 0))  # Eğer değer yoksa 0 olarak kabul et
+    age = int(request.form.get("age", 0))
+    weight = float(request.form.get("weight", 0))
+    height = float(request.form.get("height", 0))
     bloodPressureMin = float(request.form.get("bloodPressureMin", 0))
     bloodPressureMax = float(request.form.get("bloodPressureMax", 0))
 
-    # BMI hesaplaması
     bmi = weight / ((height / 100) ** 2) if height > 0 else 0
 
     patient_data = {
@@ -347,7 +405,7 @@ def submit():
         "weight": weight,
         "height": height,
         "bmi": round(bmi, 2),
-        "familyHistory": request.form.get("familyHistory", "None"),  # Default value if not provided
+        "familyHistory": request.form.get("familyHistory", "None"),
         "bloodPressureMin": bloodPressureMin,
         "bloodPressureMax": bloodPressureMax,
         "date_added": datetime.now(),
@@ -358,10 +416,8 @@ def submit():
     }
 
     symptoms_data = json.loads(request.form.get('symptoms', '{}'))
-    # Semptomları patient_data içine ekle
     patient_data["symptoms"] = symptoms_data
 
-    # Kan değerlerini Excel dosyasından oku
     if 'bloodValues' in request.files:
         file = request.files['bloodValues']
         if file and file.filename.endswith('.xlsx'):
@@ -369,14 +425,12 @@ def submit():
             filepath = os.path.join('uploads', filename)
             file.save(filepath)
 
-            # Excel dosyasını oku
             df = pd.read_excel(filepath)
-            blood_values = df.to_dict(orient='records')  # DataFrame'i dictionary listesine dönüştür
+            blood_values = df.to_dict(orient='records')
 
-            # Okunan kan değerlerini patient_data içine ekleyin
             patient_data["blood_values"].extend(blood_values)
 
-            os.remove(filepath)  # Dosyayı işledikten sonra sil
+            os.remove(filepath)
 
     if 'patientImage' in request.files:
         image_file = request.files['patientImage']
@@ -388,7 +442,6 @@ def submit():
             patient_data['image'] = binary_image
             patient_data['image_type'] = content_type
 
-    # Veritabanına patientData ekleyin
     my_db.patientData.insert_one(patient_data)
 
     return redirect(url_for('index'))
@@ -431,7 +484,6 @@ def symptom_class(value):
 @app.route('/api/diagnosis', methods=['GET'])
 def get_all_inventory():
     try:
-        # Use projection to exclude the 'image' field
         patients = list(my_db.patientData.find({}, projection={'image': False}))
         for patient in patients:
             patient['_id'] = str(patient['_id'])
@@ -470,26 +522,26 @@ def get_patient_by_name(patient_name):
 def classify_symptoms(symptoms):
     diseases = {
         'No Diagnosis': [],
-        'Cad': ['ChestPain', 'ShortnessOfBreath', 'Fatigue', 'IrregularHeartbeat', 'ExtremeWeakness', 'BlurredVision'], # CAD
-        'Heart Attack': ['ChestPain', 'ShortnessOfBreath', 'Nausea', 'ColdSweats', 'PainArm', 'PoorGrowthInInfants'], # Heart Attack
-        'Heart Failure': ['ShortnessOfBreath', 'Fatigue', 'Swelling', 'PersistentCough', 'RapidPulse', 'JawPain'], # Heart Failure
-        'Arrhythmias': ['Palpitations', 'Dizziness', 'Fainting', 'RapidPulse', 'Fatigue', 'ChestPain'],  # Arrhythmias
-        'Hypertension': ['Headache', 'Dizziness', 'BlurredVision', 'ShortnessOfBreath', 'Cyanosis', 'ColdSweats'],  # Hypertension
-        'Atherosclerosis': ['ChestPain', 'LegPain', 'NumbnessInLimbs', 'ColdLimbs', 'ExtremeWeakness', 'Confusion'],  # Atherosclerosis
-        'Angina Pectoris': ['ChestPain', 'ShortnessOfBreath', 'Fatigue', 'Nausea', 'IrregularHeartbeat', 'Cyanosis'],  # Angina Pectoris
-        'Endocarditis': ['Fatigue', 'ShortnessOfBreath', 'ChestPain', 'Fever', 'ColdSweats'],  # Endocarditis
-        'Valvular Heart Disease': ['ShortnessOfBreath', 'ChestPain', 'Fatigue', 'Dizziness', 'Swelling', 'Drinker'],  # Valvular Heart Disease
-        'Pericarditis': ['ChestPain', 'Fever', 'ShortnessOfBreath', 'Fatigue', 'Drinker', 'RapidPulse'],  # Pericarditis
-        'Cardiomyopathy': ['ShortnessOfBreath', 'Fatigue', 'Swelling', 'IrregularHeartbeat', 'Dizziness','Indigestion'],  # Cardiomyopathy
-        'Congenital Heart Defects': ['Cyanosis', 'ShortnessOfBreath', 'PoorGrowthInInfants', 'Fatigue','RecurrentRespiratoryInfections', 'Nausea'],  # Congenital Heart Defects
-        'Pulmonary Embolism': ['ShortnessOfBreath', 'ChestPain', 'RapidPulse', 'Sweating', 'Indigestion', 'Fever'],  # Pulmonary Embolism
-        'Cardiac Arrest': ['LossOfConsciousness', 'Fainting', 'ExtremeWeakness', 'Nausea', 'BackPain', 'LegPain'],  # Cardiac Arrest
-        'Cardiogenic Shock': ['RapidPulse', 'Fatigue', 'ColdSweats', 'Confusion', 'DifficultySleeping','RecurrentRespiratoryInfections'],  # Cardiogenic Shock
-        'Rheumatic Heart Disease': ['Fatigue', 'ShortnessOfBreath', 'ChestPain', 'Fever', 'Sweating','IrregularHeartbeat'],  # Rheumatic Heart Disease
-        'Heart Valve Regurgitation': ['Fatigue', 'ShortnessOfBreath', 'Palpitations', 'Swelling', 'ColdnessInLowerLegOrFoot', 'Cyanosis'],  # Heart Valve Regurgitation
-        'Heart Valve Stenosis': ['ChestPain', 'ShortnessOfBreath', 'Fatigue', 'Fainting', 'SoresOrWoundsOnToesFeetOrLegs', 'Nausea'],  # Heart Valve Stenosis
-        'Heart Murmur': ['ShortnessOfBreath', 'Fatigue', 'Dizziness', 'Swelling', 'Confusion', 'Drinker'], # Heart Murmur
-        'Peripheral Artery Disease (PAD)': ['LegPain', 'NumbnessOrWeaknessInLegs', 'ColdnessInLowerLegOrFoot', 'SoresOrWoundsOnToesFeetOrLegs', 'Drinker'] # Peripheral Artery Disease (PAD)
+        'Cad': ['ChestPain', 'ShortnessOfBreath', 'Fatigue', 'IrregularHeartbeat', 'ExtremeWeakness', 'BlurredVision'],
+        'Heart Attack': ['ChestPain', 'ShortnessOfBreath', 'Nausea', 'ColdSweats', 'PainArm', 'PoorGrowthInInfants'],
+        'Heart Failure': ['ShortnessOfBreath', 'Fatigue', 'Swelling', 'PersistentCough', 'RapidPulse', 'JawPain'],
+        'Arrhythmias': ['Palpitations', 'Dizziness', 'Fainting', 'RapidPulse', 'Fatigue', 'ChestPain'],
+        'Hypertension': ['Headache', 'Dizziness', 'BlurredVision', 'ShortnessOfBreath', 'Cyanosis', 'ColdSweats'],
+        'Atherosclerosis': ['ChestPain', 'LegPain', 'NumbnessInLimbs', 'ColdLimbs', 'ExtremeWeakness', 'Confusion'],
+        'Angina Pectoris': ['ChestPain', 'ShortnessOfBreath', 'Fatigue', 'Nausea', 'IrregularHeartbeat', 'Cyanosis'],
+        'Endocarditis': ['Fatigue', 'ShortnessOfBreath', 'ChestPain', 'Fever', 'ColdSweats'],
+        'Valvular Heart Disease': ['ShortnessOfBreath', 'ChestPain', 'Fatigue', 'Dizziness', 'Swelling', 'Drinker'],
+        'Pericarditis': ['ChestPain', 'Fever', 'ShortnessOfBreath', 'Fatigue', 'Drinker', 'RapidPulse'],
+        'Cardiomyopathy': ['ShortnessOfBreath', 'Fatigue', 'Swelling', 'IrregularHeartbeat', 'Dizziness','Indigestion'],
+        'Congenital Heart Defects': ['Cyanosis', 'ShortnessOfBreath', 'PoorGrowthInInfants', 'Fatigue','RecurrentRespiratoryInfections', 'Nausea'],
+        'Pulmonary Embolism': ['ShortnessOfBreath', 'ChestPain', 'RapidPulse', 'Sweating', 'Indigestion', 'Fever'],
+        'Cardiac Arrest': ['LossOfConsciousness', 'Fainting', 'ExtremeWeakness', 'Nausea', 'BackPain', 'LegPain'],
+        'Cardiogenic Shock': ['RapidPulse', 'Fatigue', 'ColdSweats', 'Confusion', 'DifficultySleeping','RecurrentRespiratoryInfections'],
+        'Rheumatic Heart Disease': ['Fatigue', 'ShortnessOfBreath', 'ChestPain', 'Fever', 'Sweating','IrregularHeartbeat'],
+        'Heart Valve Regurgitation': ['Fatigue', 'ShortnessOfBreath', 'Palpitations', 'Swelling', 'ColdnessInLowerLegOrFoot', 'Cyanosis'],
+        'Heart Valve Stenosis': ['ChestPain', 'ShortnessOfBreath', 'Fatigue', 'Fainting', 'SoresOrWoundsOnToesFeetOrLegs', 'Nausea'],
+        'Heart Murmur': ['ShortnessOfBreath', 'Fatigue', 'Dizziness', 'Swelling', 'Confusion', 'Drinker'],
+        'Peripheral Artery Disease (PAD)': ['LegPain', 'NumbnessOrWeaknessInLegs', 'ColdnessInLowerLegOrFoot', 'SoresOrWoundsOnToesFeetOrLegs', 'Drinker']
     }
 
     best_match = 'No Diagnosis'
@@ -498,12 +550,14 @@ def classify_symptoms(symptoms):
 
     for disease, relevant_symptoms in diseases.items():
         symptom_count = sum(symptom in symptoms for symptom in relevant_symptoms)
-        symptom_intensity = sum(symptoms[symptom] for symptom in relevant_symptoms if symptom in symptoms)
+        symptom_intensity = sum(symptoms.get(symptom, 0) for symptom in relevant_symptoms if symptom in symptoms)
 
         if symptom_count > max_count or (symptom_count == max_count and symptom_intensity > max_intensity):
-            best_match = disease
-            max_count = symptom_count
-            max_intensity = symptom_intensity
+            model_name = f"{disease.lower().replace(' ', '_')}.keras"
+            if model_name not in warning_models:
+                best_match = disease
+                max_count = symptom_count
+                max_intensity = symptom_intensity
 
     return best_match
 
@@ -511,11 +565,14 @@ def classify_symptoms(symptoms):
 def process_input(symptoms):
     disease = classify_symptoms(symptoms)
     if disease:
-        model = load_model("models/"f"{disease.lower().replace(' ', '_')}.keras")
-        input_data = np.array([list(symptoms.values())])
-        prediction = model.predict(input_data)
-        return disease, prediction[0]
+        model_path = f"active_models/{disease.lower().replace(' ', '_')}.keras"
+        if model_path not in warning_models:
+            model = load_model(model_path)
+            input_data = np.array([list(symptoms.values())])
+            prediction = model.predict(input_data)
+            return disease, prediction[0]
     return 'No disease detected or insufficient data', None
+
 
 
 @app.route('/diagnose/<string:patient_id>', methods=['POST'])
@@ -523,7 +580,6 @@ def diagnose_patient(patient_id):
     try:
         current_app.logger.info(f"Diagnosing patient with ID: {patient_id}")
         patient_data = get_patient_data(patient_id)
-        patient_email = patient_data.get('email')
         if not patient_data:
             return jsonify({'error': 'Patient not found'}), 404
 
@@ -569,20 +625,18 @@ def diagnose_patient(patient_id):
         }
 
         disease, prediction = process_input(symptoms)
+        if disease in warning_models:
+            return jsonify(
+                {'error': f"The model for {disease} is below reliability threshold. Immediate update required."}), 422
+
         if disease == 'No disease detected or insufficient data':
             return jsonify({'error': 'No disease detected or insufficient data'}), 422
 
-        current_app.logger.info(f"Disease diagnosed: {disease}")
-
-        result = my_db.patientData.update_one(
-            {"_id": ObjectId(patient_id)},
-            {"$set": {"diagnosis": disease}}
-        )
-        send_diagnosis_email(patient_email)
+        my_db.patientData.update_one({"_id": ObjectId(patient_id)}, {"$set": {"diagnosis": disease}})
+        send_diagnosis_email(patient_data.get('email'))
         return jsonify({'diagnosis': disease}), 200
 
     except Exception as e:
-        current_app.logger.error(f"An error occurred: {e}", exc_info=True)
         return jsonify({'error': 'Internal Server Error', 'message': str(e)}), 500
 
 

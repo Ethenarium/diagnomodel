@@ -3,7 +3,7 @@ import pandas as pd
 
 
 def generate_dataset(disease_id, sample_size):
-    np.random.seed(20)
+    np.random.seed(disease_id)
     multipliers = {
         'Age': 1,
         'BMI': 0.5,
@@ -67,29 +67,30 @@ def generate_dataset(disease_id, sample_size):
         19: ['ShortnessOfBreath', 'Fatigue', 'Dizziness', 'Swelling', 'Confusion', 'Drinker'],  # Heart Murmur
         20: ['LegPain', 'NumbnessOrWeaknessInLegs', 'ColdnessInLowerLegOrFoot', 'SoresOrWoundsOnToesFeetOrLegs', 'Age', 'Drinker']  # Peripheral Artery Disease (PAD)
     }
-    data = {symptom: np.zeros(sample_size) for symptom in multipliers.keys()}
+    for disease_id in disease_ids:
+        np.random.seed(disease_id)
+        data = {symptom: np.zeros(sample_size) for symptom in multipliers.keys()}
 
-    for symptom in disease_symptoms[disease_id]:
-        if symptom in multipliers:
-            data[symptom] = np.random.rand(sample_size) * multipliers[symptom]
+        for symptom in disease_symptoms[disease_id]:
+            if symptom in multipliers:
+                data[symptom] = np.random.rand(sample_size) * multipliers[symptom]
 
-    for symptom in multipliers.keys():
-        max_val = multipliers[symptom]
-        if max_val != 0:
-            data[symptom] /= max_val
+        for symptom in multipliers.keys():
+            max_val = multipliers[symptom]
+            if max_val != 0:
+                data[symptom] /= max_val
 
-    data['Diagnosis Result'] = np.zeros(sample_size)
+        relevant_symptom_sums = np.zeros(sample_size)
+        for symptom in disease_symptoms[disease_id]:
+            relevant_symptom_sums += data[symptom]
 
-    relevant_symptom_sums = np.zeros(sample_size)
-    for symptom in disease_symptoms[disease_id]:
-        relevant_symptom_sums += data[symptom]
+        data['Diagnosis Result'] = np.zeros(sample_size)
+        data['Diagnosis Result'][relevant_symptom_sums >= 2.0] = disease_id
+        data['Diagnosis Result'] = data['Diagnosis Result'].astype(int)
 
-    data['Diagnosis Result'][relevant_symptom_sums >= 2.0] = disease_id
-    data['Diagnosis Result'] = data['Diagnosis Result'].astype(int)
-    df = pd.DataFrame(data)
-
-    return df
+        df = pd.DataFrame(data)
+        df.to_csv('datasets/'f'{disease_id}.csv', index=False)
 
 
-df_cad = generate_dataset(20, 100000)
-df_cad.to_csv('pad.csv', index=False)
+disease_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+generate_dataset(disease_ids, 1000)

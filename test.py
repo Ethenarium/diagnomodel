@@ -1,12 +1,11 @@
 import pandas as pd
 from tensorflow.keras.models import load_model
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 import numpy as np
 
-model = load_model("models/cad.keras")
+model = load_model("active_models/pad.keras")
 
-test_data = pd.read_csv("cad.csv")
+test_data = pd.read_csv("test.csv")
 X_test = test_data.iloc[:, :-1]
 y_test = test_data.iloc[:, -1]
 
