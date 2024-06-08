@@ -499,6 +499,10 @@
                                     <p>Responsible Doctor: ${doctorData.full_name}</p>
                                     <p>Signature: ______________________</p>
                                 </div>
+                                <div class="section">
+                                    <h3>Diagnosis</h3>
+                                    <p>${patientData.diagnosis}</p>
+                                </div>
                             </body>
                             </html>
                         `);
@@ -516,6 +520,7 @@
             }
         });
     }
+
 
     function showToast(message, type = 'success') {
         // Mesajı sessionStorage'a kaydet

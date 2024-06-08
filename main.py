@@ -17,6 +17,7 @@ from bson.binary import Binary
 import io
 from tensorflow.keras.models import load_model
 import time
+import base64
 
 app = Flask('app')  # Flask uygulaması oluşturur
 app.secret_key = config('secret')  # Flask uygulamasının gizli anahtarını .env dosyasından ayarlar
@@ -505,13 +506,26 @@ def get_doctor_by_email(email):
         return jsonify({'error': str(e)}), 500
 
 
+class JSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, ObjectId):
+            return str(obj)
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        if isinstance(obj, bytes):
+            return base64.b64encode(obj).decode('utf-8')
+        return super(JSONEncoder, self).default(obj)
+
+
+app.json_encoder = JSONEncoder
+
+
 @app.route('/api/patients/<string:patient_name>', methods=['GET'])
 @login_required
 def get_patient_by_name(patient_name):
     try:
         patient = my_db.patientData.find_one({"name": patient_name})
         if patient:
-            patient['_id'] = str(patient['_id'])
             return jsonify(patient)
         else:
             return jsonify({'error': 'Patient not found'}), 404
@@ -644,9 +658,9 @@ app.config.update(
     MAIL_SERVER='smtp.office365.com',
     MAIL_PORT=587,
     MAIL_USE_TLS=True,
-    MAIL_USERNAME='anakinskyw0@hotmail.com',
-    MAIL_PASSWORD='Seftali6872++',
-    MAIL_DEFAULT_SENDER='anakinskyw0@hotmail.com'
+    MAIL_USERNAME='erberk38@outlook.com',
+    MAIL_PASSWORD='Erberk7268bankai+Seftali+',
+    MAIL_DEFAULT_SENDER='erberk38@outlook.com'
 )
 
 mail = Mail(app)
@@ -655,11 +669,15 @@ mail = Mail(app)
 def send_diagnosis_email(email):
     msg = Message("Teşhis Sonuçlarınız",
                   recipients=[email])
-    msg.body = (f"Iyi Günler,"
-                f"\nTeşhis sonuçlarınız çıkmıştır, lütfen en kısa sürede hastanemize gerekli tedavi için başvurunuz.\n"
-                f"\nSaygılarımızla, Falanfilan hastanesi")
+    msg.body = (
+        "Sayın Hasta,\n\n"
+        "Teşhis sonuçlarınız çıkmıştır. Lütfen en kısa sürede hastanemize gerekli tedavi için başvurunuz.\n\n"
+        "Sağlığınız bizim için önemlidir. Herhangi bir sorunuz veya endişeniz varsa, bizimle iletişime geçmekten çekinmeyin.\n\n"
+        "Saygılarımızla,\n"
+        "Vital Verse Hastanesi"
+    )
 
-    retries = 1
+    retries = 3
     for attempt in range(retries):
         try:
             mail.send(msg)
